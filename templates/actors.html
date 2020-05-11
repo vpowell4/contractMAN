@@ -30,18 +30,21 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-success" id="SubBtn" >Submit</button>
-				<button type="button" class="btn btn-default" id="CanBtn" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-cancel" id="CanBtn" data-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-default" id="DelBtn" data-dismiss="modal">Delete</button>
 			</div>
 		</div>
 	</div>
 </div>
 <script>
+// Data for the Table
 {{actordata|safe}};
- 
+// Create the Table
 var table = new Tabulator("#actors-table", {
 	 data: actordata,
 	 height:205,layout:"fitColumns",addRowPos:"top",history:true,
 	 {{actorcolumns|safe}},
+// When the user clicks on a row in the table, open the modal with the values of that row
 	 rowClick:function(e, row){
 	{% for item in columns %}
 		document.getElementById("{{item}}").value = row.getData().{{item}};
@@ -53,7 +56,7 @@ var table = new Tabulator("#actors-table", {
 // Get the modal
 var modal = document.getElementById("AddModal");
 
-// When the user clicks on the button, open the modal 
+// When the user clicks on the ADD button, open the modal with blank values 
 document.getElementById("AddBtn").onclick = function() {
 	{% for item in columns %}
 	document.getElementById("{{item}}").value = "";
@@ -61,6 +64,7 @@ document.getElementById("AddBtn").onclick = function() {
   modal.style.display = "block";
   }
 
+  //In the modal when use clicks the SUBMIT button create a JSON string and return it to FLASK
 document.getElementById("SubBtn").onclick = function() {
 	data={ {% for item in columns %}
 		"{{item}}":document.getElementById("{{item}}").value,
@@ -79,7 +83,23 @@ document.getElementById("SubBtn").onclick = function() {
 		error: function(err) {
 			console.log(err);
 		}
-	});
+		});
+	modal.style.display = "none";
+  }
+
+    //In the modal when use clicks the Delete button create a JSON string and return it to FLASK
+document.getElementById("DelBtn").onclick = function() {
+	$.ajax({
+		type: "POST", dataType: "json", contentType: "application/json",
+		url: "/actordel",
+		data: JSON.stringify("email":document.getElementById("email").value),
+		success: function(response) {
+			console.log(response);
+		},
+		error: function(err) {
+			console.log(err);
+		}
+		});
 	modal.style.display = "none";
   }
 // Get the <span> element that closes the modal
@@ -89,6 +109,7 @@ document.getElementById("SubBtn").onclick = function() {
 span.onclick = function() {
   modal.style.display = "none";
 }
+// When the user clicks on the CANCEL button in the modal close the modal
 document.getElementById("CanBtn").onclick = function() {
 	modal.style.display = "none";
   }

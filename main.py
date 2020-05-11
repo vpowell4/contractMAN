@@ -29,6 +29,8 @@ def actors():
                             ";Trusted_Connection=yes;")
     cursor = cnxn.cursor()
     data=cursor.execute('SELECT * FROM Actors FOR JSON PATH').fetchone()
+    cursor.commit()
+    cursor.close()
     return render_template("actors.html",columns=columns,actordata="var actordata = "+data[0],
                             actorcolumns="columns:[{title:'Userid', field:'userid'}, \
                                 {title:'Organisation', field:'organisation'}, \
@@ -40,13 +42,29 @@ def actors():
 @app.route('/actorupd', methods=['POST'])
 def get_post_json():    
     data = request.get_json()
-    print(json.dumps(data))
-    sqlstring = "INSERT INTO Actors SELECT userid FROM OPENJSON("+json.dumps(data)+") WITH (userid varchar(50)"
     cnxn = pyodbc.connect("Driver={SQL Server Native Client 11.0};Server="+server+
                             ";Database="+database+
                             ";Trusted_Connection=yes;")
     cursor = cnxn.cursor()
-    data=cursor.execute(sqlstring)
+    sql = "EXECUTE ACTORS_UPD @JSONINFO='"+json.dumps(data)+"'"
+    print(sql)
+    cursor.execute(sql)
+    cursor.commit()
+    cursor.close()
+    return data
+
+@app.route('/actordel', methods=['POST'])
+def get_post_json():    
+    data = request.get_json()
+    cnxn = pyodbc.connect("Driver={SQL Server Native Client 11.0};Server="+server+
+                            ";Database="+database+
+                            ";Trusted_Connection=yes;")
+    cursor = cnxn.cursor()
+    sql = ""
+    print("Delete the record")
+    #  cursor.execute(sql)
+    cursor.commit()
+    cursor.close()
     return data
 
 if __name__ == "__main__":
