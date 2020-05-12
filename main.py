@@ -8,6 +8,20 @@ app = Flask(__name__)
 server = "RYANSPC\SQLEXPRESS"
 database = "contractmanager"
 
+def table_data(table,sql,type):
+    cnxn = pyodbc.connect("Driver={SQL Server Native Client 11.0};Server="+server+
+                            ";Database="+database+";Trusted_Connection=yes;")
+    cursor = cnxn.cursor() 
+    if (type=="one") :
+        data=cursor.execute(sql).fetchone()
+    elif (type=="all") :
+        data=cursor.execute(sql).fetchall()
+    else :
+        data=cursor.execute(sql)
+    cursor.commit()
+    cursor.close()
+    return data
+
 @app.route("/")
 def home():
     return render_template("home.html")
@@ -21,44 +35,47 @@ def about():
     return render_template("about.html")
 
 @app.route("/contracts")
-def contracts():
-    return render_template("contracts.html")
+def contracts(table="Contracts"):
+    cols=table_data(table,"SELECT name FROM sys.columns WHERE object_id = OBJECT_ID('dbo."+table+"')","all")
+    columns=[]
+    for row in cols:
+        columns.append(row[0])
+    print(columns)
+    data=table_data(table,"SELECT * FROM Contracts FOR JSON PATH","one")
+    return render_template("contracts.html",columns=columns,data=data[0])
+
+@app.route('/contract/upsert', methods=['POST'])
+def contractupsert(table="Contracts"):
+    data = request.get_json()
+    result = table_data(table,"EXECUTE CONTRACTS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    return result
+
+@app.route('/contract/delete', methods=['POST'])
+def contractdelete(table="Contracts"):    
+    data = request.get_json()
+    result = table_data(table,"EXECUTE CONTRACTS_DELETE @EMAIL='"+data+"'","exe")
+    return result
 
 @app.route("/actors")
-def actors():
-    columns=["userid","role","organisation","workgroup","telephone","email","adminlevel",
-                "active","createdt","updatedt"]
-    cnxn = pyodbc.connect("Driver={SQL Server Native Client 11.0};Server="+server+
-                            ";Database="+database+";Trusted_Connection=yes;")
-    cursor = cnxn.cursor()
-    data=cursor.execute('SELECT * FROM Actors FOR JSON PATH').fetchone()
-    cursor.commit()
-    cursor.close()
-    return render_template("actors.html",columns=columns,actordata=data[0])
+def actors(table="Actors"):
+    cols=table_data(table,"SELECT name FROM sys.columns WHERE object_id = OBJECT_ID('dbo."+table+"')","all")
+    columns=[]
+    for row in cols:
+        columns.append(row[0]) 
+    data=table_data(table,"SELECT * FROM Actors FOR JSON PATH","one")
+    return render_template("actors.html",columns=columns,data=data[0])
 
 @app.route('/actor/upsert', methods=['POST'])
-def actorupsert():    
+def actorupsert(table="Actors"):
     data = request.get_json()
-    cnxn = pyodbc.connect("Driver={SQL Server Native Client 11.0};Server="+server+
-                            ";Database="+database+";Trusted_Connection=yes;")
-    cursor = cnxn.cursor()
-    sql = "EXECUTE ACTORS_UPSERT @JSONINFO='"+json.dumps(data)+"'"
-    cursor.execute(sql)
-    cursor.commit()
-    cursor.close()
-    return data
+    result = table_data(table,"EXECUTE ACTORS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    return result
 
 @app.route('/actor/delete', methods=['POST'])
-def actordelete():    
+def actordelete(table="Actors"):    
     data = request.get_json()
-    cnxn = pyodbc.connect("Driver={SQL Server Native Client 11.0};Server="+server+
-                            ";Database="+database+";Trusted_Connection=yes;")
-    cursor = cnxn.cursor()
-    sql = "EXECUTE ACTORS_DELETE @EMAIL='"+data+"'"
-    cursor.execute(sql)
-    cursor.commit()
-    cursor.close()
-    return data
+    result = table_data(table,"EXECUTE ACTORS_DELETE @EMAIL='"+data+"'","exe")
+    return result
 
 if __name__ == "__main__":
     app.run(debug=False)
