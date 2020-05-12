@@ -4,8 +4,8 @@
 <h1>Actors</h1>
 	<button id="AddBtn">+Add</button>
 	<p>
-	<div id="actors-table"></div>
-    
+<div id="actors-table"></div>
+   
 <!-- The Modal -->
 <div id="AddModal" class="modal">
 	<div class="modal-dialog" style="overflow-y:scroll; max-height:85%;" >
@@ -16,7 +16,7 @@
 			</div>
 			<div class="modal-body">
 				<div> 
-					<form action="/actorupd/" method="post">
+					<form>
 						<div class="container">
 							{% for item in columns %}
 							<div class="row">
@@ -29,9 +29,20 @@
 				</div>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-success" id="SubBtn" >Submit</button>
-				<button type="button" class="btn btn-cancel" id="CanBtn" data-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-default" id="DelBtn" data-dismiss="modal">Delete</button>
+				<div class="container">
+					<div class="row">
+						<div class="col">
+							<button type="button" class="btn btn-danger" id="DelBtn">Delete</button>
+						</div>
+						<div class="col-md-auto"> </div>
+						<div class="col">
+							<button type="button" class="btn btn-success" id="SubBtn" >Submit</button>
+						</div>
+						<div class="col">
+							<button type="button" class="btn btn-secondary" id="CanBtn" data-dismiss="modal">Cancel</button>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -42,7 +53,7 @@
 // Create the Table
 var table = new Tabulator("#actors-table", {
 	 data: actordata,
-	 height:205,layout:"fitColumns",addRowPos:"top",history:true,
+	 height:405,layout:"fitColumns",addRowPos:"top",
 	 {{actorcolumns|safe}},
 // When the user clicks on a row in the table, open the modal with the values of that row
 	 rowClick:function(e, row){
@@ -65,6 +76,7 @@ document.getElementById("AddBtn").onclick = function() {
   }
 
   //In the modal when use clicks the SUBMIT button create a JSON string and return it to FLASK
+  //If the create date is blank then INSERT, else UPDATE record
 document.getElementById("SubBtn").onclick = function() {
 	data={ {% for item in columns %}
 		"{{item}}":document.getElementById("{{item}}").value,
@@ -74,32 +86,27 @@ document.getElementById("SubBtn").onclick = function() {
 			data.createdt=data.updatedt
 			}
 		$.ajax({
-		type: "POST", dataType: "json", contentType: "application/json",
-		url: "/actorupd",
-		data: JSON.stringify(data),
-		success: function(response) {
-			console.log(response);
-		},
-		error: function(err) {
-			console.log(err);
-		}
+			type: "POST", dataType: "json", contentType: "application/json",
+			url: "/actor/upsert",
+			data: JSON.stringify(data),
+			success: function(response) {console.log(response);},
+			error: function(err) {console.log(err);}
 		});
 	modal.style.display = "none";
   }
 
     //In the modal when use clicks the Delete button create a JSON string and return it to FLASK
 document.getElementById("DelBtn").onclick = function() {
-	$.ajax({
-		type: "POST", dataType: "json", contentType: "application/json",
-		url: "/actordel",
-		data: JSON.stringify("email":document.getElementById("email").value),
-		success: function(response) {
-			console.log(response);
-		},
-		error: function(err) {
-			console.log(err);
-		}
-		});
+	var r = confirm("Press a button!");
+		if (r==true) {
+			$.ajax({
+				type: "POST", dataType: "json", contentType: "application/json",
+				url: "/actor/delete",
+				data: JSON.stringify(document.getElementById("email").value),
+				success: function(response) {console.log(response);},
+				error: function(err) {console.log(err);}
+				});
+			}
 	modal.style.display = "none";
   }
 // Get the <span> element that closes the modal

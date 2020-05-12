@@ -35,34 +35,34 @@ def actors():
                             actorcolumns="columns:[{title:'Userid', field:'userid'}, \
                                 {title:'Organisation', field:'organisation'}, \
                                 {title:'Role', field:'role'}, \
+                                {title:'Email', field:'email'}, \
                                 {title:'Admin Level', field:'adminlevel'}, \
                                 {title:'Active', field:'active',hozAlign:'center'}, \
                                 {title:'Updated', field:'updatedt', sorter:'date', hozAlign:'center'}]")
 
-@app.route('/actorupd', methods=['POST'])
-def get_post_json():    
+@app.route('/actor/upsert', methods=['POST'])
+def actorupsert():    
     data = request.get_json()
     cnxn = pyodbc.connect("Driver={SQL Server Native Client 11.0};Server="+server+
                             ";Database="+database+
                             ";Trusted_Connection=yes;")
     cursor = cnxn.cursor()
-    sql = "EXECUTE ACTORS_UPD @JSONINFO='"+json.dumps(data)+"'"
+    sql = "EXECUTE ACTORS_UPSERT @JSONINFO='"+json.dumps(data)+"'"
     print(sql)
     cursor.execute(sql)
     cursor.commit()
     cursor.close()
     return data
 
-@app.route('/actordel', methods=['POST'])
-def get_post_json():    
+@app.route('/actor/delete', methods=['POST'])
+def actordelete():    
     data = request.get_json()
     cnxn = pyodbc.connect("Driver={SQL Server Native Client 11.0};Server="+server+
                             ";Database="+database+
                             ";Trusted_Connection=yes;")
     cursor = cnxn.cursor()
-    sql = ""
-    print("Delete the record")
-    #  cursor.execute(sql)
+    sql = "EXECUTE ACTORS_DELETE @EMAIL='"+data+"'"
+    cursor.execute(sql)
     cursor.commit()
     cursor.close()
     return data
