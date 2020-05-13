@@ -22,6 +22,14 @@ def table_data(table,sql,type):
     cursor.close()
     return data
 
+def table_meta(table,type):
+    if (type=="columns") :
+        cols=table_data(table,"SELECT name FROM sys.columns WHERE object_id = OBJECT_ID('dbo."+table+"')","all")
+    columns=[]
+    for row in cols:
+        columns.append(row[0])
+    return columns
+
 @app.route("/")
 def home():
     return render_template("home.html")
@@ -36,11 +44,7 @@ def about():
 
 @app.route("/contracts")
 def contracts(table="Contracts"):
-    cols=table_data(table,"SELECT name FROM sys.columns WHERE object_id = OBJECT_ID('dbo."+table+"')","all")
-    columns=[]
-    for row in cols:
-        columns.append(row[0])
-    print(columns)
+    columns=table_meta(table,"columns")
     data=table_data(table,"SELECT * FROM Contracts FOR JSON PATH","one")
     return render_template("contracts.html",columns=columns,data=data[0])
 
@@ -53,15 +57,12 @@ def contractupsert(table="Contracts"):
 @app.route('/contract/delete', methods=['POST'])
 def contractdelete(table="Contracts"):    
     data = request.get_json()
-    result = table_data(table,"EXECUTE CONTRACTS_DELETE @EMAIL='"+data+"'","exe")
+    result = table_data(table,"EXECUTE CONTRACTS_DELETE @CONTRACTID='"+data+"'","exe")
     return result
 
 @app.route("/actors")
 def actors(table="Actors"):
-    cols=table_data(table,"SELECT name FROM sys.columns WHERE object_id = OBJECT_ID('dbo."+table+"')","all")
-    columns=[]
-    for row in cols:
-        columns.append(row[0]) 
+    columns=table_meta(table,"columns")
     data=table_data(table,"SELECT * FROM Actors FOR JSON PATH","one")
     return render_template("actors.html",columns=columns,data=data[0])
 
