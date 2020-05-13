@@ -1,10 +1,10 @@
 {% block CRUDmodal %}
 <!-- The Modal -->
-<div id="AddModal" class="modal">
-	<div class="modal-dialog" style="overflow-y:scroll; max-height:85%;" >
+<div id="AddModal" class="modal"style="overflow-y:auto;">
+	<div class="modal-dialog" >
 		<div class="modal-content">
 			<div class="modal-header">
-				<h3>Add or Change an Actor</h3>
+				<h3>Add / Change and Delete</h3>
 				<span class="close-btn">&times;</span>
 			</div>
 			<div class="modal-body">
@@ -39,9 +39,10 @@ var data = {{data|safe}};
 var table = new Tabulator("#table", {
         data: data,
         height:405,layout:"fitColumns",addRowPos:"top",
-    columns:[{% for item in columns %} {title:'{{item}}',field:'{{item}}'}, {% endfor %} ],
-// When the user clicks on a row in the table, open the modal with the values of that row
-        rowClick:function(e, row){
+    columns:[{% for item in columns %} {title:'{{item}}',field:'{{item}}'
+    {% if item == id %}  ,formatter:"link",formatterParams:{urlPrefix:"/{{module}}/{{item}}/"}, {% endif %} }, {% endfor %} ],
+// When the DOUBLE user clicks on a row in the table, open the modal with the values of that row
+        rowDblClick:function(e, row){
     {% for item in columns %} document.getElementById("{{item}}").value = row.getData().{{item}}; {% endfor %}
         modal.style.display = "block";
         },
@@ -74,14 +75,14 @@ document.getElementById("SubBtn").onclick = function() {
     modal.style.display = "none";
     }
 
-    //In the modal when use clicks the Delete button create a JSON string and return it to FLASK
+//In the modal when use clicks the Delete button create a JSON string and return it to FLASK
 document.getElementById("DelBtn").onclick = function() {
-    var r = confirm("Press a button!");
+    var r = confirm("Confirm Delete !");
         if (r==true) {
             $.ajax({
                 type: "POST", dataType: "json", contentType: "application/json",
                 url: "/{{module}}/delete",
-                data: JSON.stringify(document.getElementById("email").value),
+                data: JSON.stringify(document.getElementById("{{id}}").value),
                 success: function(response) {console.log(response);},
                 error: function(err) {console.log(err);}
                 });

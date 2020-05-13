@@ -18,6 +18,7 @@ def table_data(table,sql,type):
         data=cursor.execute(sql).fetchall()
     else :
         data=cursor.execute(sql)
+    print(table,sql,type)
     cursor.commit()
     cursor.close()
     return data
@@ -46,37 +47,46 @@ def about():
 def contracts(table="Contracts"):
     columns=table_meta(table,"columns")
     data=table_data(table,"SELECT * FROM Contracts FOR JSON PATH","one")
-    return render_template("contracts.html",columns=columns,data=data[0])
+    return render_template("contracts.html",columns=columns,data=data[0],id="contractid")
 
 @app.route('/contract/upsert', methods=['POST'])
 def contractupsert(table="Contracts"):
     data = request.get_json()
     result = table_data(table,"EXECUTE CONTRACTS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    return result
+    return data
 
 @app.route('/contract/delete', methods=['POST'])
 def contractdelete(table="Contracts"):    
     data = request.get_json()
     result = table_data(table,"EXECUTE CONTRACTS_DELETE @CONTRACTID='"+data+"'","exe")
-    return result
+    return data
+
+@app.route("/contract/contractid/<id>")
+def contract(id=id):
+    # Get the basic contract information
+    data=table_data(table,"SELECT * FROM Contracts WHERE contractid="+id+"FOR JSON PATH","one")
+    print(data)
+    # Get Contract Clauses for this contract
+
+    return render_template("contract.html")
 
 @app.route("/actors")
 def actors(table="Actors"):
     columns=table_meta(table,"columns")
     data=table_data(table,"SELECT * FROM Actors FOR JSON PATH","one")
-    return render_template("actors.html",columns=columns,data=data[0])
+    return render_template("actors.html",columns=columns,data=data[0],id="email")
 
 @app.route('/actor/upsert', methods=['POST'])
 def actorupsert(table="Actors"):
     data = request.get_json()
     result = table_data(table,"EXECUTE ACTORS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    return result
+    return data
 
 @app.route('/actor/delete', methods=['POST'])
 def actordelete(table="Actors"):    
     data = request.get_json()
     result = table_data(table,"EXECUTE ACTORS_DELETE @EMAIL='"+data+"'","exe")
-    return result
+    return data
 
 if __name__ == "__main__":
     app.run(debug=False)
