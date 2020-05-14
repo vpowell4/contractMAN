@@ -1,15 +1,24 @@
-{% set module = '' %}
+{% set module = 'contractitems' %}
 {% extends "base.html" %}
 {% block content %}
 {% include "nav.html" %}
-<h1>Contract Management</h1>
+<h1>Contract Items</h1>
 
-<h2>Contract Structure</h2>
+<div id="contractdetails"></div>
 
-<h2>Achievements</h2>
+<h2>Contract Clauses</h2>
+<button id="AddBtn">+Add</button>
+<p>
+<div id="table"></div>
+<script>
+    // Data for the Table
+    var contract = {{contract|safe}};
+    // Create the Table
+    var table = new Tabulator("#contractdetails", {
+            data: contract,
+            columns:[{title:'title',field:'title'},{title:'description',field:'description'}]
+        });
+</script>
 
-<h2>Assessments</h2>
-
-<h2>Dialogue</h2>
-
+{% include "CRUD modal.html" %}
 {% endblock %}

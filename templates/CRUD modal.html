@@ -38,7 +38,8 @@ var data = {{data|safe}};
 // Create the Table
 var table = new Tabulator("#table", {
         data: data,
-        height:405,layout:"fitColumns",addRowPos:"top",
+        persistentLayout: true, persistentSort: true, persistenceID:"{{module}}Perststance",
+        layout:"fitColumns",addRowPos:"top",
     columns:[{% for item in columns %} {title:'{{item}}',field:'{{item}}'
     {% if item == id %}  ,formatter:"link",formatterParams:{urlPrefix:"/{{module}}/{{item}}/"}, {% endif %} }, {% endfor %} ],
 // When the DOUBLE user clicks on a row in the table, open the modal with the values of that row
