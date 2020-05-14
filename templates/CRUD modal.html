@@ -10,8 +10,14 @@
 			<div class="modal-body">
 					<form>
 						<div class="container">
-							{% for item in columns %}
+							{% for item in columns if not item in ["createdt","updatedt","upduserid"] %}
 							<div class="row">
+								<div class="col"><label for="{{item}}">{{item}}:</label></div>
+								<div class="col"><input type="text" id="{{item}}" name="{{item}}"></div>
+							</div>
+                            {% endfor %}
+                            {% for item in ["createdt","updatedt","upduserid"] %}
+							<div class="row" style="visibility: hidden;">
 								<div class="col"><label for="{{item}}">{{item}}:</label></div>
 								<div class="col"><input type="text" id="{{item}}" name="{{item}}"></div>
 							</div>
@@ -37,7 +43,7 @@
 var data = {{data|safe}};
 // Create the Table
 var table = new Tabulator("#table", {
-        data: data,
+        data: data, pagination:"local",paginationAddRow:"table",paginationSize:10,
         persistentLayout: true, persistentSort: true, persistenceID:"{{module}}Perststance",
         layout:"fitColumns",addRowPos:"top",
     columns:[{% for item in columns %} {title:'{{item}}',field:'{{item}}'
@@ -63,7 +69,8 @@ document.getElementById("AddBtn").onclick = function() {
 document.getElementById("SubBtn").onclick = function() {
     data={ {% for item in columns %} "{{item}}":document.getElementById("{{item}}").value, {% endfor %} }
         data.updatedt=new Date().toISOString().slice(0, 19).replace('T', ' ');
-        if (data.createdt=="undefined") {
+        alert(data.createdt);
+        if (data.createdt=="") {
             data.createdt=data.updatedt
             }
         $.ajax({

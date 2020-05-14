@@ -3,21 +3,29 @@
 {% block content %}
 {% include "nav.html" %}
 <h1>Contract Items</h1>
-
-<div id="contractdetails"></div>
-
+<div class="container" style="background-color: rgb(211, 206, 206);padding:20px;">
+    <h2 id="contracttitle"></h2>
+    <div class="row" style="padding:5px;">
+        <div class="col-2 font-weight-bold">Document Id :</div> <div id="contractid" class="col-4"></div>
+        <div class="col-2 font-weight-bold">Supplier :</div> <div id="supplier" class="col-6"></div>
+    </div>
+    <div class="row" style="padding:5px;">
+        <div class="col-2 font-weight-bold">Start Date :</div> <div id="contractstartdate" class="col-4" ></div>
+        <div class="col-2 font-weight-bold">End Date :</div> <div id="contractenddate" class="col-4" ></div>
+    </div>
+</div>
 <h2>Contract Clauses</h2>
 <button id="AddBtn">+Add</button>
 <p>
 <div id="table"></div>
 <script>
-    // Data for the Table
-    var contract = {{contract|safe}};
-    // Create the Table
-    var table = new Tabulator("#contractdetails", {
-            data: contract,
-            columns:[{title:'title',field:'title'},{title:'description',field:'description'}]
-        });
+//Get the data for the contract details and update the display of them
+var contract = {{contract|safe}};
+document.getElementById("contractid").innerHTML = contract[0].contractid.value;
+document.getElementById("contracttitle").innerHTML = "Title : "+contract[0].title;
+document.getElementById("supplier").innerHTML = contract[0].supplier;
+document.getElementById("contractstartdate").innerHTML = contract[0].startdt;
+document.getElementById("contractenddate").innerHTML = contract[0].enddt;
 </script>
 
 {% include "CRUD modal.html" %}

@@ -14,10 +14,8 @@
     </head>
     <body>
         <div id="content">{% block content %}{% endblock %}</div>
-        <div id="footer">
-            {% block footer %}
+        <div id="footer">{% block footer %}
             <br><h6> &copy; Copyright 2020 by Whetstone Research <a href="http://whetstoneresearch.com/"></a></h6>
-            {% endblock %}
-        </div>
+        {% endblock %}</div>
     </body>
 </html>

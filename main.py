@@ -5,6 +5,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 
+current_userid = "vpowell"
 server = "RYANSPC\SQLEXPRESS"
 database = "contractmanager"
 
@@ -50,7 +51,7 @@ def about():
 def contracts():
     columns=table_meta(table="Contracts",type="columns")
     data=table_data("SELECT * FROM Contracts FOR JSON PATH","one")
-    return render_template("contracts.html",columns=columns,data=data[0],id="contractid")
+    return render_template("contracts.html",columns=columns,data=data[0], id="contractid",userid=current_userid)
 
 @app.route('/contract/upsert', methods=['POST'])
 def contractupsert():
@@ -71,13 +72,14 @@ def contract(cid=id):
     # Get Contract Clauses for this contract
     data=table_data("SELECT * FROM ContractItems WHERE contractid='"+cid+"' FOR JSON PATH","one")
     columns=table_meta(table="ContractItems",type="columns")
-    return render_template("contract.html",columns=columns,data=data[0],contract=contract[0],id="contractid")
+    return render_template("contract.html",columns=columns,data=data[0],
+                            contract=contract[0],id="contractid",userid=current_userid)
 
 @app.route("/actors")
 def actors():
     columns=table_meta(table="Actors",type="columns")
     data=table_data("SELECT * FROM Actors FOR JSON PATH","one")
-    return render_template("actors.html",columns=columns,data=data[0],id="email")
+    return render_template("actors.html",columns=columns,data=data[0],id="email",userid=current_userid)
 
 @app.route('/actor/upsert', methods=['POST'])
 def actorupsert():
