@@ -33,7 +33,8 @@ def table_meta(table,type):
 
 @app.route("/")
 def home():
-    return render_template("home.html")
+    data=table_data("SELECT * FROM Contracts FOR JSON PATH","one")
+    return render_template("home.html",data=data[0])
 
 @app.route("/404")
 def page_not_found():
@@ -66,14 +67,16 @@ def contractdelete():
     return data
 
 @app.route("/contract/contractid/<cid>")
-def contract(cid=id):
+def clause(cid=id):
     # Get the basic contract information
     contract=table_data("SELECT * FROM Contracts WHERE contractid='"+cid+"'FOR JSON PATH","one")
+    print(contract)
     # Get Contract Clauses for this contract
-    data=table_data("SELECT * FROM ContractItems WHERE contractid='"+cid+"' FOR JSON PATH","one")
-    columns=table_meta(table="ContractItems",type="columns")
+    data=table_data("SELECT * FROM Clauses WHERE contractid='"+cid+"' FOR JSON PATH","one")
+    columns=table_meta(table="Clauses",type="columns")
     return render_template("contract.html",columns=columns,data=data[0],
-                            contract=contract[0],id="contractid",userid=current_userid)
+                            contract=contract[0],
+                            id="contractid",userid=current_userid)
 
 @app.route("/actors")
 def actors():

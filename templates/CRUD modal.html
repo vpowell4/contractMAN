@@ -10,18 +10,15 @@
 			<div class="modal-body">
 					<form>
 						<div class="container">
-							{% for item in columns if not item in ["createdt","updatedt","upduserid"] %}
-							<div class="row">
+                            {%set noview= ["contractid","clauseid","actorid","createdt","updatedt","upduserid"] %}
+							{% for item in columns if not item in noview %} <div class="row">
 								<div class="col"><label for="{{item}}">{{item}}:</label></div>
 								<div class="col"><input type="text" id="{{item}}" name="{{item}}"></div>
-							</div>
-                            {% endfor %}
-                            {% for item in ["createdt","updatedt","upduserid"] %}
-							<div class="row" style="visibility: hidden;">
-								<div class="col"><label for="{{item}}">{{item}}:</label></div>
-								<div class="col"><input type="text" id="{{item}}" name="{{item}}"></div>
-							</div>
-							{% endfor %}
+							</div>{% endfor %}
+                            {% for item in noview %} <div class="row">
+								<div class="col" style="display: none;"><label for="{{item}}">{{item}}:</label></div>
+								<div class="col" style="display: none;"><input type="text" id="{{item}}" name="{{item}}"></div>
+							</div> {% endfor %}
 						</div>
 					</form>
 			</div>

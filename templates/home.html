@@ -1,4 +1,103 @@
+{% set module = 'home' %}
 {% extends "base.html" %}
 {% block content %}
 {% include "nav.html" %}
+<h1>Welcome</h1>
+<div class="container">
+    <div class="row">
+        <div class="col-3">
+            <div class="card text-white" style="width: fit-content;background-color:lightgrey">
+                <div class="card-body">
+                    <h5 class="card-title">Contracts</h5>
+                    <button type="button" class="btn btn-success">Primary</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card text-white" style="width: fit-content;background-color:lightgrey">
+                <div class="card-body">
+                    <h5 class="card-title">Attention</h5>
+                    <button type="button" class="btn btn-critical">Primary</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card text-white" style="width: fit-content;background-color:lightgrey">
+                <div class="card-body">
+                    <h5 class="card-title">Warning</h5>
+                    <button type="button" class="btn btn-warning">Primary</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card text-white" style="width: fit-content;background-color:lightgrey">
+                <div class="card-body">
+                    <h5 class="card-title">Normal</h5>
+                    <button type="button" class="btn btn-success">Primary</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <canvas id="bar-chart" width="800" height="100"></canvas>
+    </div>
+    <div class="row">
+        <div id="table"></div>
+    </div>
+</div>
+
+<script>
+data={{data|safe}}
+
+//next 12 months
+var theMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+var today = new Date();
+var aMonth = today.getMonth();
+var i;
+var currMonths=[]
+for (i=0; i<12; i++) {
+    currMonths.push(theMonths[aMonth])
+    aMonth++;
+    if (aMonth > 11) {
+        aMonth = 0;
+    }   
+}
+var contractclauses={attention:[65, 5, 80, 81, 56, 85, 40],
+                    warning:[20, 10, 30, 11, 36, 45, 26],
+                    normal:[80, 90, 20, 3, 11, 12, 40]
+                    }
+
+// Bar chart
+new Chart(document.getElementById("bar-chart"), {
+    type: 'bar',
+    data: {
+      labels: currMonths,
+      datasets:  [{
+        type: 'bar',
+        label: 'Attention',
+        backgroundColor: "red",
+        data: contractclauses.attention,
+      }, {
+        type: 'bar',
+        label: 'Warning',
+        backgroundColor: "orange",
+        data: contractclauses.warning
+      }, {
+        type: 'bar',
+        label: 'Normal',
+        backgroundColor: "green",
+        data: contractclauses.normal
+      }
+      ]
+    },
+    options: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: 'Contract Clauses by Due Date and Status'
+      }
+    }
+});
+
+</script>
 {% endblock %}
