@@ -1,0 +1,10 @@
+{% set module = 'change' %}
+{% extends "base.html" %}
+{% block content %}
+{% include "nav.html" %}
+<h1>Changes</h1>
+<button id="AddBtn">+Add</button>
+<p>
+<div id="table"></div>
+{% include "CRUD modal.html" %}
+{% endblock %}

@@ -2,52 +2,88 @@
 {% extends "base.html" %}
 {% block content %}
 {% include "nav.html" %}
-<h1>Welcome</h1>
-<div class="container">
-    <div class="row">
-        <div class="col-3">
-            <div class="card text-white" style="width: fit-content;background-color:lightgrey">
-                <div class="card-body">
-                    <h5 class="card-title">Contracts</h5>
-                    <button type="button" class="btn btn-success">Primary</button>
+<div class="container" >
+    <div class="row" style="padding:10px;">
+        <div class="col-2">
+            <div class="row" style="padding:5px">
+                <div class="card text-darkgrey w-100" style="background-color:lightgrey">
+                    <div class="card-body">
+                        <h5 class="card-title">Contracts</h5>
+                        <a href="/contracts" type="button" class="btn w-100 btn-info" id="contractsbtn">{{contracts}}</a>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="padding-top:5px">
+                <div class="card text-darkgrey w-100" style="background-color:lightgrey">
+                    <div class="card-body">
+                        <h5 class="card-title">Issues</h5>
+                        <a href="/contract/issues" type="button" class="btn w-100 btn-success" id="issuesbtn"></a>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-3">
-            <div class="card text-white" style="width: fit-content;background-color:lightgrey">
-                <div class="card-body">
-                    <h5 class="card-title">Attention</h5>
-                    <button type="button" class="btn btn-critical">Primary</button>
+        <div class="col-2">
+            <div class="row" style="padding:5px">
+                <div class="card text-darkgrey w-100" style="background-color:lightgrey">
+                    <div class="card-body">
+                        <h5 class="card-title">Attention</h5>
+                        <a href="/contracts?action=Attention" type="button" class="btn w-100 btn-danger" id="attentionbtn">{{attention}}</a>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="padding:5px">
+                <div class="card text-darkgrey w-100" style="background-color:lightgrey">
+                    <div class="card-body">
+                        <h5 class="card-title">Changes</h5>
+                        <a href="/contract/changes" type="button" class="btn w-100 btn-danger" id="changesbtn"></a>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-3">
-            <div class="card text-white" style="width: fit-content;background-color:lightgrey">
-                <div class="card-body">
-                    <h5 class="card-title">Warning</h5>
-                    <button type="button" class="btn btn-warning">Primary</button>
+        <div class="col-2">
+            <div class="row" style="padding:5px">
+                <div class="card text-darkgrey w-100" style="background-color:lightgrey">
+                    <div class="card-body">
+                        <h5 class="card-title">Warning</h5>
+                        <a href="/contracts?action=Warning" type="button" class="btn w-100 btn-warning" id="warningbtn">{{warning}}</a>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="padding:5px">
+                <div class="card text-darkgrey w-100" style="background-color:lightgrey">
+                    <div class="card-body">
+                        <h5 class="card-title">Risks</h5>
+                        <a href="/contract/risks" type="button" class="btn w-100 btn-success" id="risksbtn"></a>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-3">
-            <div class="card text-white" style="width: fit-content;background-color:lightgrey">
-                <div class="card-body">
-                    <h5 class="card-title">Normal</h5>
-                    <button type="button" class="btn btn-success">Primary</button>
-                </div>
-            </div>
+        <div class="col-6">
+            <canvas id="contracts-pie-chart" width="200" height="100" ></canvas>
         </div>
     </div>
-    <div class="row">
-        <canvas id="bar-chart" width="800" height="100"></canvas>
+    <div class="row" style="padding: 10px;">
+        <div class="col-6">
+            <canvas id="overdue-clauses-bar-chart" width="200" height="100" ></canvas>
+        </div>
+        <div class="col-6">
+            <canvas id="clauses-bar-chart" width="200" height="100"></canvas>
+        </div>
     </div>
-    <div class="row">
-        <div id="table"></div>
+    <div class="row" style="padding: 10px;">
+        <div id="dialog-table"></div>
     </div>
 </div>
 
 <script>
-data={{data|safe}}
+
+    //dialog={{dialog|safe}}
+dialog=[]
+
+//document.getElementById("contractsbtn").innerHTML = "634";
+document.getElementById("issuesbtn").innerHTML = "104";
+document.getElementById("changesbtn").innerHTML = "224";
+document.getElementById("risksbtn").innerHTML = "26";
 
 //next 12 months
 var theMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -62,42 +98,51 @@ for (i=0; i<12; i++) {
         aMonth = 0;
     }   
 }
-var contractclauses={attention:[65, 5, 80, 81, 56, 85, 40],
+var contracttypes=["Resource","Project","Service"]
+
+var contractclauses={attention:[65, 5, 80, 81, 56, 85, 40,0,0,0,0,1],
                     warning:[20, 10, 30, 11, 36, 45, 26],
                     normal:[80, 90, 20, 3, 11, 12, 40]
                     }
 
-// Bar chart
-new Chart(document.getElementById("bar-chart"), {
-    type: 'bar',
-    data: {
-      labels: currMonths,
-      datasets:  [{
-        type: 'bar',
-        label: 'Attention',
-        backgroundColor: "red",
-        data: contractclauses.attention,
-      }, {
-        type: 'bar',
-        label: 'Warning',
-        backgroundColor: "orange",
-        data: contractclauses.warning
-      }, {
-        type: 'bar',
-        label: 'Normal',
-        backgroundColor: "green",
-        data: contractclauses.normal
-      }
-      ]
-    },
-    options: {
-      legend: { display: false },
-      title: {
-        display: true,
-        text: 'Contract Clauses by Due Date and Status'
-      }
-    }
-});
+var OverDue = ["1 Day", "3 Days","1 Wk", "2 Wks", "3 Wks", "1 Mth", "2 Mth", "3 Mth", "6 Mth", "9 Mth", "1 Yr", "> 1Yr"];
 
+// Overdue Clauses Bar chart
+new Chart(document.getElementById("overdue-clauses-bar-chart"), {type: 'bar',
+    data: {labels: OverDue,
+            datasets:  [{type: 'bar', label: 'Attention', backgroundColor: "red", data: contractclauses.attention},
+                {type: 'bar', label: 'Warning', backgroundColor: "orange", data: contractclauses.warning},
+                {type: 'bar', label: 'Normal', backgroundColor: "green", data: contractclauses.normal}]},
+    options: {legend: { display: false }, title: {display: true,text: 'Overdue Contract Clauses'}}
+    });
+
+// Planned Clauses Bar chart
+new Chart(document.getElementById("clauses-bar-chart"), {type: 'bar',
+    data: {labels: currMonths,
+            datasets:  [{type: 'bar', label: 'Attention', backgroundColor: "red", data: contractclauses.attention},
+                {type: 'bar', label: 'Warning', backgroundColor: "orange", data: contractclauses.warning},
+                {type: 'bar', label: 'Normal', backgroundColor: "green", data: contractclauses.normal}]},
+    options: {legend: { display: false }, title: {display: true,text: 'Contract Clauses'}}
+    });
+// Planned Clauses Pie chart
+new Chart(document.getElementById("contracts-pie-chart"), {type: 'doughnut',
+    data: {labels: contracttypes,
+            datasets:  [{label: "Number",backgroundColor: ["#3e95cd", "#8e5ea2","#3cba9f"],
+              data: [276,452,123]
+            }
+          ]},
+    options: {legend: { display: true }, title: {display: true,text: 'Contract Types'}}
+    });
+
+var table = new Tabulator("#dialog-table", {
+    data: dialog, 
+    persistentLayout: true, persistentSort: true, persistenceID:"{{module}}Perststance",
+    layout:"fitColumns",addRowPos:"top",
+    columns:[{title:'Contract',field:'contractid'},
+                {title:'Clause',field:'clauseid'},
+                {title:'Userid',field:'userid'},
+                {title:'Date/Time',field:'createdt'},
+                {title:'Comments',field:'comments'},]
+    });
 </script>
 {% endblock %}

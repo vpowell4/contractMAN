@@ -1,0 +1,10 @@
+{% set module = 'risk' %}
+{% extends "base.html" %}
+{% block content %}
+{% include "nav.html" %}
+<h1>Risks</h1>
+<button id="AddBtn">+Add</button>
+<p>
+<div id="table"></div>
+{% include "CRUD modal.html" %}
+{% endblock %}

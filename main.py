@@ -33,8 +33,12 @@ def table_meta(table,type):
 
 @app.route("/")
 def home():
-    data=table_data("SELECT * FROM Contracts FOR JSON PATH","one")
-    return render_template("home.html",data=data[0])
+    contracts=table_data("SELECT COUNT(*) FROM Contracts","one")
+    attention=table_data("SELECT COUNT(*) FROM Contracts WHERE status='Attention'","one")
+    warning=table_data("SELECT COUNT(*) FROM Contracts  WHERE status='Warning'","one")
+    dialog=table_data("SELECT * FROM Dialog FOR JSON PATH","one")
+    return render_template("home.html",contracts=contracts[0],attention=attention[0],warning=warning[0],
+            dialog=dialog)
 
 @app.route("/404")
 def page_not_found():
@@ -50,8 +54,13 @@ def about():
 
 @app.route("/contracts")
 def contracts():
+    action  = request.args.get('action', None)
+    print (action)
     columns=table_meta(table="Contracts",type="columns")
-    data=table_data("SELECT * FROM Contracts FOR JSON PATH","one")
+    if (action==None):
+        data=table_data("SELECT * FROM Contracts FOR JSON PATH","one")
+    else :
+        data=table_data("SELECT * FROM Contracts WHERE status='"+action+"' FOR JSON PATH","one")
     return render_template("contracts.html",columns=columns,data=data[0], id="contractid",userid=current_userid)
 
 @app.route('/contract/upsert', methods=['POST'])
@@ -65,6 +74,24 @@ def contractdelete():
     data = request.get_json()
     result = table_data("EXECUTE CONTRACTS_DELETE @CONTRACTID='"+data+"'","exe")
     return data
+
+@app.route("/contract/issues")
+def contractissues():
+    columns=table_meta(table="Issues",type="columns")
+    data=table_data("SELECT * FROM Issues FOR JSON PATH","one")
+    return render_template("issues.html",columns=columns,data=data[0],id="",userid=current_userid)
+
+@app.route("/contract/risks")
+def contractrisks():
+    columns=table_meta(table="Risks",type="columns")
+    data=table_data("SELECT * FROM Risks FOR JSON PATH","one")
+    return render_template("risks.html",columns=columns,data=data[0],id="",userid=current_userid)
+
+@app.route("/contract/changes")
+def contractchanges():
+    columns=table_meta(table="Changes",type="columns")
+    data=table_data("SELECT * FROM Changes FOR JSON PATH","one")
+    return render_template("changes.html",columns=columns,data=data[0],id="",userid=current_userid)
 
 @app.route("/contract/contractid/<cid>")
 def clause(cid=id):
