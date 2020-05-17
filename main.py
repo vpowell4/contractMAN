@@ -5,7 +5,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-current_userid = "vpowell"
+current_userid = "vpowell4"
 server = "RYANSPC\SQLEXPRESS"
 database = "contractmanager"
 
@@ -33,12 +33,10 @@ def table_meta(table,type):
 
 @app.route("/")
 def home():
-    contracts=table_data("SELECT COUNT(*) FROM Contracts","one")
-    attention=table_data("SELECT COUNT(*) FROM Contracts WHERE status='Attention'","one")
-    warning=table_data("SELECT COUNT(*) FROM Contracts  WHERE status='Warning'","one")
+    results=table_data("EXECUTE DASHBOARD_STATS","all")
     dialog=table_data("SELECT * FROM Dialog FOR JSON PATH","one")
-    return render_template("home.html",contracts=contracts[0],attention=attention[0],warning=warning[0],
-            dialog=dialog)
+    return render_template("home.html",contracts=results[1][3],attention=results[1][1], warning=results[1][2],
+        issues=results[2][3],risks=results[3][3],changes=results[0][3],dialog=dialog)
 
 @app.route("/404")
 def page_not_found():
@@ -55,7 +53,6 @@ def about():
 @app.route("/contracts")
 def contracts():
     action  = request.args.get('action', None)
-    print (action)
     columns=table_meta(table="Contracts",type="columns")
     if (action==None):
         data=table_data("SELECT * FROM Contracts FOR JSON PATH","one")
@@ -75,29 +72,64 @@ def contractdelete():
     result = table_data("EXECUTE CONTRACTS_DELETE @CONTRACTID='"+data+"'","exe")
     return data
 
-@app.route("/contract/issues")
-def contractissues():
+@app.route("/issues")
+def issues():
     columns=table_meta(table="Issues",type="columns")
     data=table_data("SELECT * FROM Issues FOR JSON PATH","one")
-    return render_template("issues.html",columns=columns,data=data[0],id="",userid=current_userid)
+    return render_template("issues.html",columns=columns,data=data[0],id="issueid",userid=current_userid)
 
-@app.route("/contract/risks")
+@app.route('/issue/upsert', methods=['POST'])
+def issueupsert():
+    data = request.get_json()
+    result = table_data("EXECUTE ISSUES_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    return data
+
+@app.route('/issue/delete', methods=['POST'])
+def issuedelete():    
+    data = request.get_json()
+    result = table_data("EXECUTE ISSUES_DELETE @ISSUEID='"+data+"'","exe")
+    return data
+
+@app.route("/risks")
 def contractrisks():
     columns=table_meta(table="Risks",type="columns")
     data=table_data("SELECT * FROM Risks FOR JSON PATH","one")
-    return render_template("risks.html",columns=columns,data=data[0],id="",userid=current_userid)
+    return render_template("risks.html",columns=columns,data=data[0],id="riskid",userid=current_userid)
 
-@app.route("/contract/changes")
+@app.route('/risk/upsert', methods=['POST'])
+def riskupsert():
+    data = request.get_json()
+    result = table_data("EXECUTE RISKS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    return data
+
+@app.route('/risk/delete', methods=['POST'])
+def riskdelete():    
+    data = request.get_json()
+    result = table_data("EXECUTE RISKS_DELETE @RISKID='"+data+"'","exe")
+    return data
+
+@app.route("/changes")
 def contractchanges():
     columns=table_meta(table="Changes",type="columns")
     data=table_data("SELECT * FROM Changes FOR JSON PATH","one")
-    return render_template("changes.html",columns=columns,data=data[0],id="",userid=current_userid)
+    return render_template("changes.html",columns=columns,data=data[0],id="changeid",userid=current_userid)
+
+@app.route('/change/upsert', methods=['POST'])
+def changeupsert():
+    data = request.get_json()
+    result = table_data("EXECUTE CHANGES_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    return data
+
+@app.route('/change/delete', methods=['POST'])
+def changedelete():    
+    data = request.get_json()
+    result = table_data("EXECUTE CHANGES_DELETE @CHANGEID='"+data+"'","exe")
+    return data
 
 @app.route("/contract/contractid/<cid>")
 def clause(cid=id):
     # Get the basic contract information
     contract=table_data("SELECT * FROM Contracts WHERE contractid='"+cid+"'FOR JSON PATH","one")
-    print(contract)
     # Get Contract Clauses for this contract
     data=table_data("SELECT * FROM Clauses WHERE contractid='"+cid+"' FOR JSON PATH","one")
     columns=table_meta(table="Clauses",type="columns")

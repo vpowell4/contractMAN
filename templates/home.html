@@ -17,7 +17,7 @@
                 <div class="card text-darkgrey w-100" style="background-color:lightgrey">
                     <div class="card-body">
                         <h5 class="card-title">Issues</h5>
-                        <a href="/contract/issues" type="button" class="btn w-100 btn-success" id="issuesbtn"></a>
+                        <a href="/issues" type="button" class="btn w-100 btn-success" id="issuesbtn">{{issues}}</a>
                     </div>
                 </div>
             </div>
@@ -35,7 +35,7 @@
                 <div class="card text-darkgrey w-100" style="background-color:lightgrey">
                     <div class="card-body">
                         <h5 class="card-title">Changes</h5>
-                        <a href="/contract/changes" type="button" class="btn w-100 btn-danger" id="changesbtn"></a>
+                        <a href="/changes" type="button" class="btn w-100 btn-danger" id="changesbtn">{{changes}}</a>
                     </div>
                 </div>
             </div>
@@ -53,7 +53,7 @@
                 <div class="card text-darkgrey w-100" style="background-color:lightgrey">
                     <div class="card-body">
                         <h5 class="card-title">Risks</h5>
-                        <a href="/contract/risks" type="button" class="btn w-100 btn-success" id="risksbtn"></a>
+                        <a href="/risks" type="button" class="btn w-100 btn-success" id="risksbtn">{{risks}}</a>
                     </div>
                 </div>
             </div>
@@ -79,11 +79,6 @@
 
     //dialog={{dialog|safe}}
 dialog=[]
-
-//document.getElementById("contractsbtn").innerHTML = "634";
-document.getElementById("issuesbtn").innerHTML = "104";
-document.getElementById("changesbtn").innerHTML = "224";
-document.getElementById("risksbtn").innerHTML = "26";
 
 //next 12 months
 var theMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

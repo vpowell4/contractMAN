@@ -1,18 +1,27 @@
 {% block nav %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <a class="navbar-brand" href="/">ContractMAN </a>
+    <a class="navbar-brand" href="/">obligata</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
-        <li class="nav-item dropdown">
+        <li class="nav-item">
           <li class="nav-item">
             <a class="nav-link" href="/contracts">Contracts</a>
           </li>  
-        <li class="nav-item">
-          <a class="nav-link" href="/actors">Actors</a>
-        </li> 
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbardrop" data-toggle="dropdown">Activities</a>
+          <div class="dropdown-menu">
+              <a class="dropdown-item" href="/actors">Actors</a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="/issues">Issues</a>
+              <a class="dropdown-item" href="/risks">Risks</a>
+              <a class="dropdown-item" href="/changes">Changes</a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="/contract">Clauses</a>
+          </div>   
+        </li>
         <li class="nav-item">
           <a class="nav-link" href="/config">Configuration</a>
       </li>
