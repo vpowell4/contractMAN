@@ -4,7 +4,7 @@
 	<div class="modal-dialog" >
 		<div class="modal-content">
 			<div class="modal-header">
-				<h3>Add / Change and Delete</h3>
+                <h3>Add / Change and Delete</h3>
 				<span class="close-btn">&times;</span>
 			</div>
 			<div class="modal-body">
@@ -52,6 +52,12 @@
                                 <option>Contributor</option>
                                 <option>Reviewer</option>
                                 <option>Sys Admin</option>
+                            </select>
+                            {% elif item=="contractid" %}
+                            <select class="form-control" type="text" id="{{item}}">
+                                {% for contsel in contracts%}
+                                <option value="{{contsel['contractid']}}">{{contsel['title']}}</option>
+                                {% endfor %}
                             </select>
                             {% elif item in ["startdate","enddate","duedate","milestonedate"] %}
                             <input class="form-control" type="date" id="{{item}}">

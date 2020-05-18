@@ -64,6 +64,7 @@ def contracts():
 def contractupsert():
     data = request.get_json()
     result = table_data("EXECUTE CONTRACTS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    print(json.dumps(data))
     return data
 
 @app.route('/contract/delete', methods=['POST'])
@@ -74,9 +75,11 @@ def contractdelete():
 
 @app.route("/issues")
 def issues():
+    contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
     columns=table_meta(table="Issues",type="columns")
     data=table_data("SELECT * FROM Issues FOR JSON PATH","one")
-    return render_template("issues.html",columns=columns,data=data[0],id="issueid",userid=current_userid)
+    return render_template("issues.html",columns=columns,data=data[0],id="issueid",
+            contracts=json.loads(contracts[0]),userid=current_userid)
 
 @app.route('/issue/upsert', methods=['POST'])
 def issueupsert():
