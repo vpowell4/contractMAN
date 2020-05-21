@@ -86,16 +86,32 @@
 <script>
 // Data for the Table
 var data = {{data|safe}};
+var cols = {{columns|safe}};
+var module = '{{module|safe}}';
+var id = '{{id}}';
+var userid = '{{userid}}';
+// Create the table columns view
+colsview=[]
+for (item in cols) {
+    if(cols[item] == id) {
+        m=module+"/"+cols[item]+"/"
+        colsview.push({title:cols[item],field:cols[item],
+            formatter:"link",formatterParams:{urlPrefix:m}})
+    } else {
+        colsview.push({title:cols[item],field:cols[item]})
+    }
+}
+console.log(JSON.stringify(colsview, null, 4));
 // Create the Table
 var table = new Tabulator("#table", {
         data: data, pagination:"local",paginationAddRow:"table",paginationSize:10,
-        persistentLayout: true, persistentSort: true, persistenceID:"{{module}}Persistance",
-        layout:"fitColumns",addRowPos:"top",
-    columns:[{% for item in columns %} {title:'{{item}}',field:'{{item}}'
-    {% if item == id %}  ,formatter:"link",formatterParams:{urlPrefix:"/{{module}}/{{item}}/"}, {% endif %} }, {% endfor %} ],
+        persistentLayout: true, persistentSort: true, persistenceID:"Persistance".concat(module),
+        layout:"fitColumns",addRowPos:"top", columns:colsview,
 // When the DOUBLE user clicks on a row in the table, open the modal with the values of that row
         rowDblClick:function(e, row){
-    {% for item in columns %} document.getElementById("{{item}}").value = row.getData().{{item}}; {% endfor %}
+            for(item in cols){ 
+                document.getElementById(cols[item]).value = row.getData()[cols[item]];
+                }
         modal.style.display = "block";
         },
     });
@@ -105,26 +121,32 @@ var modal = document.getElementById("AddModal");
 
 // When the user clicks on the ADD button, open the modal with blank values 
 document.getElementById("AddBtn").onclick = function() {
-    {% for item in columns %} document.getElementById("{{item}}").value = ""; {% endfor %}
+    for (item in cols) {
+        document.getElementById(cols[item]).value = "";
+        }
     modal.style.display = "block";
     }
 
-    //In the modal when use clicks the SUBMIT button create a JSON string and return it to FLASK
-    //If the create date is blank then INSERT, else UPDATE record
+//In the modal when use clicks the SUBMIT button create a JSON string and return it to FLASK
+   //If the create date is blank then INSERT, else UPDATE record
 document.getElementById("SubBtn").onclick = function() {
-    data={ {% for item in columns %} "{{item}}":document.getElementById("{{item}}").value, {% endfor %} }
-        data.updatedt=new Date().toISOString().slice(0, 19).replace('T', ' ');
-        if (data.createdt=="") {
-            data.createdt=data.updatedt;
-            }
-        data.upduserid="{{userid}}";
-        $.ajax({
-            type: "POST", dataType: "json", contentType: "application/json",
-            url: "/{{module}}/upsert",
-            data: JSON.stringify(data),
-            success: function(response) {console.log(response);},
-            error: function(err) {console.log(err);}
-        });
+    dd={}
+    for(item in cols){
+        dd[cols[item]]=document.getElementById(cols[item]).value
+        }
+//    console.log(JSON.stringify(data, null, 4));
+    dd[updatedt]=new Date().toISOString().slice(0, 19).replace('T', ' ');
+    if (dd[createdt]=="") {
+        dd[createdt]=dd[updatedt];
+        }
+    dd.upduserid = userid;
+    $.ajax({
+        type: "POST", dataType: "json", contentType: "application/json",
+        url: "/"+module+"/upsert",
+        data: JSON.stringify(dd),
+        success: function(response) {console.log(response);},
+        error: function(err) {console.log(err);}
+    });
     modal.style.display = "none";
     }
 
@@ -134,7 +156,7 @@ document.getElementById("DelBtn").onclick = function() {
         if (r==true) {
             $.ajax({
                 type: "POST", dataType: "json", contentType: "application/json",
-                url: "/{{module}}/delete",
+                url: "/"+module+"/delete",
                 data: JSON.stringify(document.getElementById("{{id}}").value),
                 success: function(response) {console.log(response);},
                 error: function(err) {console.log(err);}
