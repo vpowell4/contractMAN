@@ -1,0 +1,10 @@
+{% set module = 'supplier' %}
+{% extends "base.html" %}
+{% block content %}
+{% include "nav.html" %}
+<h1>Suppliers</h1>
+<button id="AddBtn">+Add</button>
+<p>
+<div id="table"></div>
+{% include "CRUD modal.html" %}
+{% endblock %}

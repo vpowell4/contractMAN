@@ -140,6 +140,12 @@ def clause(cid=id):
                             contract=contract[0],
                             id="contractid",userid=current_userid)
 
+@app.route("/suppliers")
+def suppliers():
+    columns=table_meta(table="Contracts",type="columns")
+    data=table_data("SELECT * FROM Contracts FOR JSON PATH","one")
+    return render_template("suppliers.html",columns=columns,data=data[0],id="email",userid=current_userid)
+
 @app.route("/actors")
 def actors():
     columns=table_meta(table="Actors",type="columns")

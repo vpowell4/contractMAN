@@ -86,35 +86,69 @@
 <script>
 // Data for the Table
 var data = {{data|safe}};
-var cols = {{columns|safe}};
+var cols = {{columns|safe}};    
 var module = '{{module|safe}}';
 var id = '{{id}}';
 var userid = '{{userid}}';
-if (module == 'contract') {
-    var noview = ['contractid','clientsponsor','clientowner','clientmanager','suppliermanager']
+var noview = []
+switch (module) {
+    case 'contract' :
+        noview = ['contractid','clientsponsor','clientowner','clientmanager','suppliermanager'];
+        tabbuts = ['Issues','Risks','Changes']
+        break;
+    case 'actor' :
+        noview = ['actorid','role','telephone'];
+        tabbuts = []
+        break;
+    case 'issue' :
+        noview = ['issueid','contractid','clauseid'];
+        tabbuts = []
+        break;
+    case 'risk' :
+        noview = ['riskid','contractid','clauseid'];
+        tabbuts = []
+        break;
+    case 'change' :
+        noview = ['changeid','contractid','clauseid'];
+        tabbuts = []
+        break;
     }
-// Create the table columns view
-colsview=[]
+// Create the table columns view make visable only columns needed, and add href
+var colsview = []
 for (item in cols) {
     visible=true
     if(noview.includes(cols[item]) == true) {
         visible=false
         }
-    if(cols[item] == id) {
-        m=module+"/"+cols[item]+"/"
+//console.log("HELLO "+module+" : "+cols[item]+" : "+noview.includes(cols[item])+" : "+noview)
+    if(cols[item] == "title") {
         colsview.push({title:cols[item],field:cols[item],
-            formatter:"link",formatterParams:{urlPrefix:m},
+            formatter:"link",formatterParams:{urlPrefix:module+"/"+id+"/",urlField:id},
             visible:visible})
     } else {
         colsview.push({title:cols[item],field:cols[item],
             visible:visible})
     }
 }
-console.log(JSON.stringify(colsview, null, 4));
+if(module == 'contract'){
+    var Issuebtn = function(cell, formatterParams){
+        return "<button>I</button>";};
+    var Riskbtn = function(cell, formatterParams){
+        return "<button>R</button>";};
+    var Changebtn = function(cell, formatterParams){
+        return "<button>C</button>";};
+    colsview.unshift({formatter:Riskbtn, width:10, align:"center",
+        cellClick:function(e, cell){alert("Risks for " + cell.getRow().getData().name)}})
+    colsview.unshift({formatter:Changebtn, width:10, align:"center",
+        cellClick:function(e, cell){alert("Changes for " + cell.getRow().getData().name)}})
+    colsview.unshift({formatter:Issuebtn, width:10, align:"center",
+        cellClick:function(e, cell){alert("Issues for " + cell.getRow().getData().name)}})
+    }
+// console.log(JSON.stringify(colsview, null, 4));
 // Create the Table
 var table = new Tabulator("#table", {
         data: data, pagination:"local",paginationAddRow:"table",paginationSize:10,
-        persistentLayout: true, persistentSort: true, persistenceID:"Persistance".concat(module),
+ //       persistence:{sort:true,columns:true}, persistenceID:"Persistance".concat(userid),
         layout:"fitColumns",addRowPos:"top", columns:colsview,
 // When the DOUBLE user clicks on a row in the table, open the modal with the values of that row
         rowDblClick:function(e, row){
