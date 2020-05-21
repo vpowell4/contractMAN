@@ -22,6 +22,8 @@
                             {%set noview= ["riskid","createdt","updatedt","upduserid"] %}
                         {% elif module=="change" %}
                             {%set noview= ["changeid","createdt","updatedt","upduserid"] %}
+                        {% elif module=="supplier" %}
+                            {%set noview= ["supplierid","createdt","updatedt","upduserid"] %}
                         {% else %}
                             {%set noview= ["createdt","updatedt","upduserid"] %}
                         {% endif %}
@@ -94,23 +96,21 @@ var noview = []
 switch (module) {
     case 'contract' :
         noview = ['contractid','clientsponsor','clientowner','clientmanager','suppliermanager'];
-        tabbuts = ['Issues','Risks','Changes']
         break;
     case 'actor' :
         noview = ['actorid','role','telephone'];
-        tabbuts = []
         break;
     case 'issue' :
         noview = ['issueid','contractid','clauseid'];
-        tabbuts = []
         break;
     case 'risk' :
         noview = ['riskid','contractid','clauseid'];
-        tabbuts = []
         break;
     case 'change' :
         noview = ['changeid','contractid','clauseid'];
-        tabbuts = []
+        break;
+    case 'supplier' :
+        noview = ['supplierid'];
         break;
     }
 // Create the table columns view make visable only columns needed, and add href
@@ -121,35 +121,59 @@ for (item in cols) {
         visible=false
         }
 //console.log("HELLO "+module+" : "+cols[item]+" : "+noview.includes(cols[item])+" : "+noview)
-    if(cols[item] == "title") {
+    if(cols[item] == "status")
+        colsview.push({title:cols[item],field:cols[item],
+            formatter:function(cell, formatterParams){
+                var value = cell.getValue();
+                 if(value == "Attention"){
+                     return "<span style='color:red;'>" + value + "</span>";
+                 } else if (value == "Warning"){
+                    return "<span style='color:orange;'>" + value + "</span>";
+                    } else {
+                     return "<span style='color:green;'>" + value + "</span>";
+                 }
+             },visible:visible})
+    else if(cols[item] == "title") {
         colsview.push({title:cols[item],field:cols[item],
             formatter:"link",formatterParams:{urlPrefix:module+"/"+id+"/",urlField:id},
             visible:visible})
-    } else {
+         } 
+
+    else if(["startdate","enddate"].includes(cols[item]) == true) {
+        colsview.push({title:cols[item],field:cols[item],
+            formatter:"datetime", formatterParams:{outputFormat:"DD/MM/YY",
+                invalidPlaceholder:"(invalid date)"},
+            visible:visible})         
+        }
+
+    else {
         colsview.push({title:cols[item],field:cols[item],
             visible:visible})
     }
 }
 if(module == 'contract'){
     var Issuebtn = function(cell, formatterParams){
-        return "<button>I</button>";};
+        return '<button type="button" class="btn-warning">I </button>';};
     var Riskbtn = function(cell, formatterParams){
-        return "<button>R</button>";};
+        return '<button type="button" class="btn-warning">R</button>';};
     var Changebtn = function(cell, formatterParams){
-        return "<button>C</button>";};
+        return '<button type="button" class="btn-warning">C</button>';};
     colsview.unshift({formatter:Riskbtn, width:10, align:"center",
-        cellClick:function(e, cell){alert("Risks for " + cell.getRow().getData().name)}})
+        cellClick:function(e, cell){window.location.href ="/risk/contractid/"+cell.getRow().getData().contractid}})
     colsview.unshift({formatter:Changebtn, width:10, align:"center",
-        cellClick:function(e, cell){alert("Changes for " + cell.getRow().getData().name)}})
+        cellClick:function(e, cell){window.location.href ="/change/contractid/"+cell.getRow().getData().contractid}})
     colsview.unshift({formatter:Issuebtn, width:10, align:"center",
-        cellClick:function(e, cell){alert("Issues for " + cell.getRow().getData().name)}})
+        cellClick:function(e, cell){window.location.href ="/issue/contractid/"+cell.getRow().getData().contractid}})
     }
 // console.log(JSON.stringify(colsview, null, 4));
 // Create the Table
 var table = new Tabulator("#table", {
-        data: data, pagination:"local",paginationAddRow:"table",paginationSize:10,
- //       persistence:{sort:true,columns:true}, persistenceID:"Persistance".concat(userid),
-        layout:"fitColumns",addRowPos:"top", columns:colsview,
+        data: data,
+        pagination:"local",paginationAddRow:"table",paginationSize:20,
+        placeholder:"No Data Available",height:"100%",
+        persistence:{sort:true,columns:true}, persistenceID:"Persistance".concat(userid),
+        layout:"fitColumns",addRowPos:"top",
+        columns:colsview,
 // When the DOUBLE user clicks on a row in the table, open the modal with the values of that row
         rowDblClick:function(e, row){
             for(item in cols){ 
@@ -171,16 +195,16 @@ document.getElementById("AddBtn").onclick = function() {
     }
 
 //In the modal when use clicks the SUBMIT button create a JSON string and return it to FLASK
-   //If the create date is blank then INSERT, else UPDATE record
+//If the create date is blank then INSERT, else UPDATE record
 document.getElementById("SubBtn").onclick = function() {
     dd={}
     for(item in cols){
         dd[cols[item]]=document.getElementById(cols[item]).value
         }
 //    console.log(JSON.stringify(data, null, 4));
-    dd[updatedt]=new Date().toISOString().slice(0, 19).replace('T', ' ');
-    if (dd[createdt]=="") {
-        dd[createdt]=dd[updatedt];
+    dd.updatedt=new Date().toISOString().slice(0, 19).replace('T', ' ');
+    if (dd.createdt=="") {
+        dd.createdt=dd.updatedt;
         }
     dd.upduserid = userid;
     $.ajax({

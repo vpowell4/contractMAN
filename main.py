@@ -81,6 +81,16 @@ def issues():
     return render_template("issues.html",columns=columns,data=data[0],id="issueid",
             contracts=json.loads(contracts[0]),userid=current_userid)
 
+@app.route("/issue/contractid/<cid>")
+def issuesbyconttact(cid=id):
+    data=table_data("SELECT * FROM Issues WHERE contractid='"+cid+"' FOR JSON PATH","one")
+    if (data == None) :
+        data=""
+    else :
+        data=data[0]
+    columns=table_meta(table="Issues",type="columns")
+    return render_template("issues.html",columns=columns,data=data,id="issueid",userid=current_userid)
+
 @app.route('/issue/upsert', methods=['POST'])
 def issueupsert():
     data = request.get_json()
@@ -95,9 +105,22 @@ def issuedelete():
 
 @app.route("/risks")
 def contractrisks():
+    contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
     columns=table_meta(table="Risks",type="columns")
     data=table_data("SELECT * FROM Risks FOR JSON PATH","one")
-    return render_template("risks.html",columns=columns,data=data[0],id="riskid",userid=current_userid)
+    return render_template("risks.html",columns=columns,data=data[0],id="riskid",
+            contracts=json.loads(contracts[0]),userid=current_userid)
+
+@app.route("/risk/contractid/<cid>")
+def risksbyconttact(cid=id):
+    data=table_data("SELECT * FROM Risks WHERE contractid='"+cid+"' FOR JSON PATH","one")
+    if (data == None) :
+        data=""
+    else :
+        data=data[0]
+    columns=table_meta(table="Risks",type="columns")
+    return render_template("Risks.html",columns=columns,data=data,id="riskid",
+            userid=current_userid)
 
 @app.route('/risk/upsert', methods=['POST'])
 def riskupsert():
@@ -113,9 +136,25 @@ def riskdelete():
 
 @app.route("/changes")
 def contractchanges():
+    contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
     columns=table_meta(table="Changes",type="columns")
     data=table_data("SELECT * FROM Changes FOR JSON PATH","one")
-    return render_template("changes.html",columns=columns,data=data[0],id="changeid",userid=current_userid)
+    if (data == None) :
+        data=""
+    else :
+        data=data[0]
+    return render_template("changes.html",columns=columns,data=data,id="changeid",
+             contracts=json.loads(contracts[0]),userid=current_userid)    
+
+@app.route("/change/contractid/<cid>")
+def changesbyconttact(cid=id):
+    data=table_data("SELECT * FROM Changes WHERE contractid='"+cid+"' FOR JSON PATH","one")
+    if (data == None) :
+        data=""
+    else :
+        data=data[0]
+    columns=table_meta(table="Changes",type="columns")
+    return render_template("Changes.html",columns=columns,data=data,id="changeid",userid=current_userid)
 
 @app.route('/change/upsert', methods=['POST'])
 def changeupsert():
@@ -142,9 +181,21 @@ def clause(cid=id):
 
 @app.route("/suppliers")
 def suppliers():
-    columns=table_meta(table="Contracts",type="columns")
-    data=table_data("SELECT * FROM Contracts FOR JSON PATH","one")
+    columns=table_meta(table="Suppliers",type="columns")
+    data=table_data("SELECT * FROM Suppliers FOR JSON PATH","one")
     return render_template("suppliers.html",columns=columns,data=data[0],id="email",userid=current_userid)
+
+@app.route('/suppliers/upsert', methods=['POST'])
+def supplierupsert():
+    data = request.get_json()
+    result = table_data("EXECUTE SUPPLIERS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    return data
+
+@app.route('/suppliers/delete', methods=['POST'])
+def supplierdelete():    
+    data = request.get_json()
+    result = table_data("EXECUTE SUPPLIERS_DELETE @CHANGEID='"+data+"'","exe")
+    return data
 
 @app.route("/actors")
 def actors():
