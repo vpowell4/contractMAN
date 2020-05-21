@@ -90,15 +90,24 @@ var cols = {{columns|safe}};
 var module = '{{module|safe}}';
 var id = '{{id}}';
 var userid = '{{userid}}';
+if (module == 'contract') {
+    var noview = ['contractid','clientsponsor','clientowner','clientmanager','suppliermanager']
+    }
 // Create the table columns view
 colsview=[]
 for (item in cols) {
+    visible=true
+    if(noview.includes(cols[item]) == true) {
+        visible=false
+        }
     if(cols[item] == id) {
         m=module+"/"+cols[item]+"/"
         colsview.push({title:cols[item],field:cols[item],
-            formatter:"link",formatterParams:{urlPrefix:m}})
+            formatter:"link",formatterParams:{urlPrefix:m},
+            visible:visible})
     } else {
-        colsview.push({title:cols[item],field:cols[item]})
+        colsview.push({title:cols[item],field:cols[item],
+            visible:visible})
     }
 }
 console.log(JSON.stringify(colsview, null, 4));
