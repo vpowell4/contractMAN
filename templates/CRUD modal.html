@@ -87,11 +87,22 @@
 </div>
 <script>
 // Data for the Table
-var data = {{data|safe}};
-var cols = {{columns|safe}};    
 var module = '{{module|safe}}';
-var id = '{{id}}';
 var userid = '{{userid}}';
+var cid = '{{cid}}'
+var sid = '{{sid}}'
+var status = '{{status}}'
+var data = $.ajax({
+    type: "POST", dataType: "json", contentType: "application/json",
+    url: "/getbasedata",
+    data: JSON.stringify({module:module,userid:userid,cid:cid,sid:sid,status:status}),
+    async: false,
+    success: function(results) {return results;},
+    error: function(err) {console.log(err);}
+    }).responseJSON;
+// Create the Table
+var cols = {{columns|safe}};    
+var id = '{{id}}';
 var noview = []
 switch (module) {
     case 'contract' :
@@ -138,39 +149,56 @@ for (item in cols) {
             formatter:"link",formatterParams:{urlPrefix:module+"/"+id+"/",urlField:id},
             visible:visible})
          } 
-
-    else if(["startdate","enddate"].includes(cols[item]) == true) {
+    else if(["startdate","enddate","duedate"].includes(cols[item]) == true) {
         colsview.push({title:cols[item],field:cols[item],
-            formatter:"datetime", formatterParams:{outputFormat:"DD/MM/YY",
+            formatter:"datetime", formatterParams:{
+                inputFormat:"YYYY-MM-DD",outputFormat:"DD/MM/YY",
                 invalidPlaceholder:"(invalid date)"},
             visible:visible})         
         }
-
+        else if(["createdt","updatedt"].includes(cols[item]) == true) {
+            colsview.push({title:cols[item],field:cols[item],
+                formatter:"datetime", formatterParams:{
+                    outputFormat:"DD/MM/YY HH:MM",
+                    invalidPlaceholder:"(invalid date)"},
+                visible:visible})         
+            }
     else {
         colsview.push({title:cols[item],field:cols[item],
             visible:visible})
     }
 }
-if(module == 'contract'){
+if(module == 'contract' || module == 'supplier'){
     var Issuebtn = function(cell, formatterParams){
         return '<button type="button" class="btn-warning">I </button>';};
     var Riskbtn = function(cell, formatterParams){
         return '<button type="button" class="btn-warning">R</button>';};
     var Changebtn = function(cell, formatterParams){
         return '<button type="button" class="btn-warning">C</button>';};
-    colsview.unshift({formatter:Riskbtn, width:10, align:"center",
-        cellClick:function(e, cell){window.location.href ="/risk/contractid/"+cell.getRow().getData().contractid}})
-    colsview.unshift({formatter:Changebtn, width:10, align:"center",
-        cellClick:function(e, cell){window.location.href ="/change/contractid/"+cell.getRow().getData().contractid}})
-    colsview.unshift({formatter:Issuebtn, width:10, align:"center",
-        cellClick:function(e, cell){window.location.href ="/issue/contractid/"+cell.getRow().getData().contractid}})
+    if(module == 'contract') {
+        colsview.unshift({formatter:Riskbtn, width:10, align:"center",
+            cellClick:function(e, cell){window.location.href ="/risk/contractid/"+cell.getRow().getData().contractid}})
+        colsview.unshift({formatter:Changebtn, width:10, align:"center",
+            cellClick:function(e, cell){window.location.href ="/change/contractid/"+cell.getRow().getData().contractid}})
+        colsview.unshift({formatter:Issuebtn, width:10, align:"center",
+            cellClick:function(e, cell){window.location.href ="/issue/contractid/"+cell.getRow().getData().contractid}})
+        }
+    else {
+// TO BE IMPLEMENTED LATER
+//        colsview.unshift({formatter:Riskbtn, width:10, align:"center",
+//            cellClick:function(e, cell){window.location.href ="/risk/supplierid/"+cell.getRow().getData().supplierid}})
+//        colsview.unshift({formatter:Changebtn, width:10, align:"center",
+//            cellClick:function(e, cell){window.location.href ="/change/supplierid/"+cell.getRow().getData().supplierid}})
+//        colsview.unshift({formatter:Issuebtn, width:10, align:"center",
+//            cellClick:function(e, cell){window.location.href ="/issue/supplierid/"+cell.getRow().getData().supplierid}})
+        }
     }
 // console.log(JSON.stringify(colsview, null, 4));
 // Create the Table
 var table = new Tabulator("#table", {
         data: data,
         pagination:"local",paginationAddRow:"table",paginationSize:20,
-        placeholder:"No Data Available",height:"100%",
+        placeholder:"No Data Available",height:600,
         persistence:{sort:true,columns:true}, persistenceID:"Persistance".concat(userid),
         layout:"fitColumns",addRowPos:"top",
         columns:colsview,

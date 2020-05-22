@@ -1,4 +1,4 @@
-from flask import Flask, render_template,request
+from flask import Flask, render_template,request,jsonify
 import json
 import pyodbc 
 from datetime import datetime 
@@ -31,6 +31,20 @@ def table_meta(table,type):
         columns.append(row[0])
     return columns
 
+@app.route("/getbasedata", methods=['POST'])
+def getbasedata():
+    if request.method == 'POST':
+        content = request.get_json()
+        if (content["status"]=="" and content["cid"]=="" and content["sid"]=="" ):
+            data=table_data("SELECT * FROM "+content["module"].title()+"s FOR JSON PATH","one")
+        elif (content["status"]!="" and content["cid"]=="" and content["sid"]=="" ):
+            data=table_data("SELECT * FROM "+content["module"].title()+"s WHERE status='"+content["status"]+"' FOR JSON PATH","one")
+        elif (content["status"]=="" and content["cid"]!="" and content["sid"]=="" ):
+            data=table_data("SELECT * FROM "+content["module"].title()+"s WHERE contractid='"+content["cid"]+"' FOR JSON PATH","one")
+        elif (content["status"]=="" and content["cid"]=="" and content["sid"]!="" ):
+            data=table_data("SELECT * FROM "+content["module"].title()+"s WHERE supplierid='"+content["sid"]+"' FOR JSON PATH","one")
+        return data[0]
+
 @app.route("/")
 def home():
     results=table_data("EXECUTE DASHBOARD_STATS","all")
@@ -52,19 +66,14 @@ def about():
 
 @app.route("/contracts")
 def contracts():
-    action  = request.args.get('action', None)
+    status=request.args.get('action', '')
     columns=table_meta(table="Contracts",type="columns")
-    if (action==None):
-        data=table_data("SELECT * FROM Contracts FOR JSON PATH","one")
-    else :
-        data=table_data("SELECT * FROM Contracts WHERE status='"+action+"' FOR JSON PATH","one")
-    return render_template("contracts.html",columns=columns,data=data[0], id="contractid",userid=current_userid)
+    return render_template("contracts.html",columns=columns,status=status,sid="",cid="", id="contractid",userid=current_userid)
 
 @app.route('/contract/upsert', methods=['POST'])
 def contractupsert():
     data = request.get_json()
     result = table_data("EXECUTE CONTRACTS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    print(json.dumps(data))
     return data
 
 @app.route('/contract/delete', methods=['POST'])
@@ -73,23 +82,26 @@ def contractdelete():
     result = table_data("EXECUTE CONTRACTS_DELETE @CONTRACTID='"+data+"'","exe")
     return data
 
+@app.route("/contract/contractid/<cid>")
+def clause(cid=id):
+    # Get the basic contract information
+    contract=table_data("SELECT * FROM Contracts WHERE contractid='"+cid+"'FOR JSON PATH","one")
+    columns=table_meta(table="Clauses",type="columns")
+    return render_template("contract.html",columns=columns,status="",cid=cid,sid="",
+                            contract=contract[0],id="contractid",userid=current_userid)
+
+
 @app.route("/issues")
 def issues():
     contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
     columns=table_meta(table="Issues",type="columns")
-    data=table_data("SELECT * FROM Issues FOR JSON PATH","one")
-    return render_template("issues.html",columns=columns,data=data[0],id="issueid",
+    return render_template("issues.html",columns=columns,id="issueid",
             contracts=json.loads(contracts[0]),userid=current_userid)
 
 @app.route("/issue/contractid/<cid>")
 def issuesbyconttact(cid=id):
-    data=table_data("SELECT * FROM Issues WHERE contractid='"+cid+"' FOR JSON PATH","one")
-    if (data == None) :
-        data=""
-    else :
-        data=data[0]
     columns=table_meta(table="Issues",type="columns")
-    return render_template("issues.html",columns=columns,data=data,id="issueid",userid=current_userid)
+    return render_template("issues.html",columns=columns,status="",cid=cid,sid="",id="issueid",userid=current_userid)
 
 @app.route('/issue/upsert', methods=['POST'])
 def issueupsert():
@@ -107,20 +119,13 @@ def issuedelete():
 def contractrisks():
     contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
     columns=table_meta(table="Risks",type="columns")
-    data=table_data("SELECT * FROM Risks FOR JSON PATH","one")
-    return render_template("risks.html",columns=columns,data=data[0],id="riskid",
+    return render_template("risks.html",columns=columns,id="riskid",
             contracts=json.loads(contracts[0]),userid=current_userid)
 
 @app.route("/risk/contractid/<cid>")
 def risksbyconttact(cid=id):
-    data=table_data("SELECT * FROM Risks WHERE contractid='"+cid+"' FOR JSON PATH","one")
-    if (data == None) :
-        data=""
-    else :
-        data=data[0]
     columns=table_meta(table="Risks",type="columns")
-    return render_template("Risks.html",columns=columns,data=data,id="riskid",
-            userid=current_userid)
+    return render_template("Risks.html",columns=columns,status="",cid=cid,sid="",id="riskid",userid=current_userid)
 
 @app.route('/risk/upsert', methods=['POST'])
 def riskupsert():
@@ -138,23 +143,13 @@ def riskdelete():
 def contractchanges():
     contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
     columns=table_meta(table="Changes",type="columns")
-    data=table_data("SELECT * FROM Changes FOR JSON PATH","one")
-    if (data == None) :
-        data=""
-    else :
-        data=data[0]
-    return render_template("changes.html",columns=columns,data=data,id="changeid",
+    return render_template("changes.html",columns=columns,id="changeid",
              contracts=json.loads(contracts[0]),userid=current_userid)    
 
 @app.route("/change/contractid/<cid>")
 def changesbyconttact(cid=id):
-    data=table_data("SELECT * FROM Changes WHERE contractid='"+cid+"' FOR JSON PATH","one")
-    if (data == None) :
-        data=""
-    else :
-        data=data[0]
     columns=table_meta(table="Changes",type="columns")
-    return render_template("Changes.html",columns=columns,data=data,id="changeid",userid=current_userid)
+    return render_template("Changes.html",columns=columns,status="",cid=cid,sid="",id="changeid",userid=current_userid)
 
 @app.route('/change/upsert', methods=['POST'])
 def changeupsert():
@@ -168,40 +163,29 @@ def changedelete():
     result = table_data("EXECUTE CHANGES_DELETE @CHANGEID='"+data+"'","exe")
     return data
 
-@app.route("/contract/contractid/<cid>")
-def clause(cid=id):
-    # Get the basic contract information
-    contract=table_data("SELECT * FROM Contracts WHERE contractid='"+cid+"'FOR JSON PATH","one")
-    # Get Contract Clauses for this contract
-    data=table_data("SELECT * FROM Clauses WHERE contractid='"+cid+"' FOR JSON PATH","one")
-    columns=table_meta(table="Clauses",type="columns")
-    return render_template("contract.html",columns=columns,data=data[0],
-                            contract=contract[0],
-                            id="contractid",userid=current_userid)
 
 @app.route("/suppliers")
 def suppliers():
     columns=table_meta(table="Suppliers",type="columns")
-    data=table_data("SELECT * FROM Suppliers FOR JSON PATH","one")
-    return render_template("suppliers.html",columns=columns,data=data[0],id="email",userid=current_userid)
+    return render_template("suppliers.html",columns=columns,id="supplierid",userid=current_userid)
 
-@app.route('/suppliers/upsert', methods=['POST'])
+@app.route('/supplier/upsert', methods=['POST'])
 def supplierupsert():
     data = request.get_json()
+    print("hello => "+data)
     result = table_data("EXECUTE SUPPLIERS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
     return data
 
-@app.route('/suppliers/delete', methods=['POST'])
-def supplierdelete():    
+@app.route('/supplier/delete', methods=['POST'])
+def supplierdelete():
     data = request.get_json()
-    result = table_data("EXECUTE SUPPLIERS_DELETE @CHANGEID='"+data+"'","exe")
+    result = table_data("EXECUTE SUPPLIERS_DELETE @SUPPLIERID='"+data+"'","exe")
     return data
 
 @app.route("/actors")
 def actors():
     columns=table_meta(table="Actors",type="columns")
-    data=table_data("SELECT * FROM Actors FOR JSON PATH","one")
-    return render_template("actors.html",columns=columns,data=data[0],id="email",userid=current_userid)
+    return render_template("actors.html",columns=columns,id="email",userid=current_userid)
 
 @app.route('/actor/upsert', methods=['POST'])
 def actorupsert():
