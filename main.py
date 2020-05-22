@@ -35,14 +35,15 @@ def table_meta(table,type):
 def getbasedata():
     if request.method == 'POST':
         content = request.get_json()
+        print(content)
         if (content["status"]=="" and content["cid"]=="" and content["sid"]=="" ):
             data=table_data("SELECT * FROM "+content["module"].title()+"s FOR JSON PATH","one")
         elif (content["status"]!="" and content["cid"]=="" and content["sid"]=="" ):
             data=table_data("SELECT * FROM "+content["module"].title()+"s WHERE status='"+content["status"]+"' FOR JSON PATH","one")
         elif (content["status"]=="" and content["cid"]!="" and content["sid"]=="" ):
-            data=table_data("SELECT * FROM "+content["module"].title()+"s WHERE contractid='"+content["cid"]+"' FOR JSON PATH","one")
+            data=table_data("SELECT * FROM "+content["module"].title()+"s WHERE contractid='"+str(content["cid"])+"' FOR JSON PATH","one")
         elif (content["status"]=="" and content["cid"]=="" and content["sid"]!="" ):
-            data=table_data("SELECT * FROM "+content["module"].title()+"s WHERE supplierid='"+content["sid"]+"' FOR JSON PATH","one")
+            data=table_data("SELECT * FROM "+content["module"].title()+"s WHERE supplierid='"+str(content["sid"])+"' FOR JSON PATH","one")
         return data[0]
 
 @app.route("/")
@@ -197,6 +198,13 @@ def actorupsert():
 def actordelete():    
     data = request.get_json()
     result = table_data("EXECUTE ACTORS_DELETE @EMAIL='"+data+"'","exe")
+    return data
+
+@app.route('/dialog/insert', methods=['POST'])
+def dialoginsert():
+    data = request.get_json()
+    print(data)
+ #   result = table_data("EXECUTE DIALOG_INSERT @JSONINFO='"+json.dumps(data)+"'","exe")
     return data
 
 if __name__ == "__main__":
