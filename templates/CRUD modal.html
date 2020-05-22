@@ -1,4 +1,36 @@
 {% block CRUDmodal %}
+
+<div class="container">
+    <button id="AddBtn">+Add</button>
+    <p>
+    <div class="row">
+        <div id="table"></div>
+    </div>
+</div>
+<br>
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <div id="SelectedDataTable"></div>			
+        </div>
+        <div class="col">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                <span class="input-group-text font-weight-bold">Enter comments here</span>
+                </div>
+                <textarea class="form-control" aria-label="With textarea"></textarea>
+            </div>
+            <div class="text-right">
+                <button id="DialogSubmit" class="btn btn-outline-secondary my-2 my-sm-0" type="button">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Dialogue table -->
+<p>
+<div class="container">
+    <div id="DialogDataTable"></div>			
+</div>
 <!-- The Modal -->
 <div id="AddModal" class="modal"style="overflow-y:auto;">
 	<div class="modal-dialog" >
@@ -100,7 +132,15 @@ var data = $.ajax({
     success: function(results) {return results;},
     error: function(err) {console.log(err);}
     }).responseJSON;
-// Create the Table
+var DialogData = $.ajax({
+        type: "POST", dataType: "json", contentType: "application/json",
+        url: "/getbasedata",
+        data: JSON.stringify({module:'dialog',userid:userid,cid:"",sid:"",status:""}),
+        async: false,
+        success: function(results) {return results;},
+        error: function(err) {console.log(err);}
+        }).responseJSON;
+// Create the Table views
 var cols = {{columns|safe}};    
 var id = '{{id}}';
 var noview = []
@@ -131,7 +171,6 @@ for (item in cols) {
     if(noview.includes(cols[item]) == true) {
         visible=false
         }
-//console.log("HELLO "+module+" : "+cols[item]+" : "+noview.includes(cols[item])+" : "+noview)
     if(cols[item] == "status")
         colsview.push({title:cols[item],field:cols[item],
             formatter:function(cell, formatterParams){
@@ -195,14 +234,34 @@ if(module == 'contract' || module == 'supplier'){
     }
 // console.log(JSON.stringify(colsview, null, 4));
 // Create the Table
+var selectedData=[]
+var selectedDataTable = new Tabulator("#SelectedDataTable",{
+    columns:[{title:"Description",field:"description"},{title:"Value",field:"value"}],
+    addRowPos:"bottom",layout:"fitColumns"
+    });
+var DialogDataTable = new Tabulator("#DialogDataTable",{
+    data:DialogData,
+    columns:[{title:"Type",field:"type"},{title:"Userid",field:"upduserid"},
+            {title:"Date",field:"createdt"},{title:"Comments",field:"comments"}],
+    pagination:"local",paginationAddRow:"table",paginationSize:20,
+    addRowPos:"bottom",layout:"fitColumns"
+    });
 var table = new Tabulator("#table", {
-        data: data,
+        data:data,selectable:1,
         pagination:"local",paginationAddRow:"table",paginationSize:20,
-        placeholder:"No Data Available",height:600,
+        placeholder:"No Data Available",height:"70%",
         persistence:{sort:true,columns:true}, persistenceID:"Persistance".concat(userid),
-        layout:"fitColumns",addRowPos:"top",
+        layout:"fitColumns",addRowPos:"bottom",
         columns:colsview,
 // When the DOUBLE user clicks on a row in the table, open the modal with the values of that row
+        rowClick:function(e, row){
+            row.select();
+            var selectedData = table.getSelectedData()[0];
+            selectedDataTable.clearData();
+            for (let[key,value] of Object.entries(selectedData)) {
+                selectedDataTable.addRow({description:key, value:value}, true);
+              }
+        },
         rowDblClick:function(e, row){
             for(item in cols){ 
                 document.getElementById(cols[item]).value = row.getData()[cols[item]];
@@ -210,7 +269,13 @@ var table = new Tabulator("#table", {
         modal.style.display = "block";
         },
     });
-    
+
+
+// When the user clicks on the CANCEL button in the modal close the modal
+document.getElementById("DialogSubmit").onclick = function() {
+    alert(" HELLO ")
+        } 
+
 // Get the modal
 var modal = document.getElementById("AddModal");
 
@@ -270,7 +335,6 @@ span.onclick = function() {
 document.getElementById("CanBtn").onclick = function() {
     modal.style.display = "none";
     }
-
 // When the user clicks anywhere outside of the modal, close it
 window.onclick = function(event) {
     if (event.target == modal) {
