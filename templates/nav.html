@@ -1,6 +1,6 @@
 {% block nav %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <a class="navbar-brand" href="/">obligata</a>
+    <a class="navbar-brand" href="/home">obligata</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -27,6 +27,13 @@
         </li>
         <li class="nav-item">
           <a class="nav-link" href="/config">Configuration</a>
+      </li>
+      <li class="nav-item">
+      {% if session['logged_in'] %}
+      <a class="nav-link" href="/logout">Logout</a>
+      {% else %}
+      <a class="nav-link" href="/login">login</a>
+      {% endif %}
       </li>
     </div>
   </nav>

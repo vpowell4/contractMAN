@@ -85,11 +85,13 @@
                                 <option>Reviewer</option>
                                 <option>Sys Admin</option>
                             </select>
-                            {% elif item=="contractid" %}
+                            {% elif item=="contractid" and cid!="" %}
+                            <input class="form-control" type="text" id="{{item}}">
+                            {% elif item=="contractid" and cid=="" %}
                             <select class="form-control" type="text" id="{{item}}">
-                                {% for contsel in contracts%}
-                                <option value="{{contsel['contractid']}}">{{contsel['title']}}</option>
-                                {% endfor %}
+                            {% for contsel in contracts%}
+                            <option value="{{contsel['contractid']}}">{{contsel['title']}}</option>
+                            {% endfor %}
                             </select>
                             {% elif item in ["startdate","enddate","duedate","milestonedate"] %}
                             <input class="form-control" type="date" id="{{item}}">
@@ -122,16 +124,6 @@ var userid = '{{userid}}';
 var cid = '{{cid}}'
 var sid = '{{sid}}'
 var status = '{{status}}'
-// Get the Data for the main Table (this calls a function which calls a database stored procedure)
-// The only data returned is the data which the user is authorised to see
-var TableData = $.ajax({
-    type: "POST", dataType: "json", contentType: "application/json",async: false,
-    url: "/getbasedata",
-    data: JSON.stringify({module:module,userid:userid,cid:cid,sid:sid,status:status}),
-    success: function(results) {return results;},
-    error: function(err) {console.log(err);}
-    }).responseJSON;
-console.log("TableData : "+TableData)
 var cols = {{columns|safe}};    
 var id = '{{id}}';
 // For each module list which fields are n ot visable in the modal display
@@ -208,30 +200,31 @@ if(module == 'contract' || module == 'supplier'){
     var Changebtn = function(cell, formatterParams){
         return '<button type="button" class="btn-warning">C</button>';};
     if(module == 'contract') {
-        colsview.unshift({formatter:Riskbtn, width:10, align:"center",
+        colsview.unshift({formatter:Riskbtn, width:10, hozAlign:"center",
             cellClick:function(e, cell){window.location.href ="/risk/contractid/"+cell.getRow().getData().contractid}})
-        colsview.unshift({formatter:Changebtn, width:10, align:"center",
+        colsview.unshift({formatter:Changebtn, width:10, hozAlign:"center",
             cellClick:function(e, cell){window.location.href ="/change/contractid/"+cell.getRow().getData().contractid}})
-        colsview.unshift({formatter:Issuebtn, width:10, align:"center",
+        colsview.unshift({formatter:Issuebtn, width:10, hozAlign:"center",
             cellClick:function(e, cell){window.location.href ="/issue/contractid/"+cell.getRow().getData().contractid}})
         }
     else {
 // TO BE IMPLEMENTED LATER
-//        colsview.unshift({formatter:Riskbtn, width:10, align:"center",
+//        colsview.unshift({formatter:Riskbtn, width:10, hozAlign:"center",
 //            cellClick:function(e, cell){window.location.href ="/risk/supplierid/"+cell.getRow().getData().supplierid}})
-//        colsview.unshift({formatter:Changebtn, width:10, align:"center",
+//        colsview.unshift({formatter:Changebtn, width:10, hozAlign:"center",
 //            cellClick:function(e, cell){window.location.href ="/change/supplierid/"+cell.getRow().getData().supplierid}})
-//        colsview.unshift({formatter:Issuebtn, width:10, align:"center",
+//        colsview.unshift({formatter:Issuebtn, width:10, hozAlign:"center",
 //            cellClick:function(e, cell){window.location.href ="/issue/supplierid/"+cell.getRow().getData().supplierid}})
         }
     }
 // console.log(JSON.stringify(colsview, null, 4));
-// Create the Table
+// Create the Tables - first the table showing the selected row of data
 var selectedData=[]
 var selectedDataTable = new Tabulator("#SelectedDataTable",{
     columns:[{title:"Description",field:"description"},{title:"Value",field:"value"}],
     addRowPos:"bottom",layout:"fitColumns"
     });
+// Create the Tables - second the table showing the dialogue
 var DialogData=[]
 var DialogDataTable = new Tabulator("#DialogDataTable",{
     data:DialogData,
@@ -241,7 +234,16 @@ var DialogDataTable = new Tabulator("#DialogDataTable",{
     pagination:"local",paginationAddRow:"table",paginationSize:20,
     addRowPos:"bottom",layout:"fitColumns"
     });
-console.log("HELLO "+TableData)
+// Get the Data for the main Table (this calls a function which calls a database stored procedure)
+// The only data returned is the data which the user is authorised to see
+var TableData = $.ajax({
+    type: "POST", dataType: "json", contentType: "application/json",async: false,
+    url: "/getbasedata",
+    data: JSON.stringify({module:module,userid:userid,cid:cid,sid:sid,status:status}),
+    success: function(results) {return results;},
+    error: function(err) {console.log(err);}
+    }).responseJSON;
+// Create the Tables - finally the table showing the data
 var table = new Tabulator("#table", {
         data:TableData,selectable:1,
         pagination:"local",paginationAddRow:"table",paginationSize:20,
@@ -249,7 +251,8 @@ var table = new Tabulator("#table", {
         persistence:{sort:true,columns:true}, persistenceID:"Persistance".concat(userid),
         layout:"fitColumns",addRowPos:"bottom",
         columns:colsview,
-// When the SINGLE user clicks on a row in the table, update the row table and the dialog box for that contract
+// When the SINGLE user clicks on a row in the table, update the row table
+// and change the dialog box to show only records for that contract
         rowClick:function(e, row){
             row.select();
             var selectedData = table.getSelectedData()[0];
@@ -259,10 +262,9 @@ var table = new Tabulator("#table", {
                 }
             cid=selectedData["contractid"]
             var DialogData = $.ajax({
-                type: "POST", dataType: "json", contentType: "application/json",
+                type: "POST", dataType: "json", contentType: "application/json", async: false,
                 url: "/getbasedata",
                 data: JSON.stringify({module:'dialog',userid:userid,cid:cid,sid:"",status:""}),
-                async: false,
                 success: function(results) {return results;},
                 error: function(err) {console.log(err);}
                 }).responseJSON;
@@ -316,13 +318,16 @@ var modal = document.getElementById("AddModal");
 // When the user clicks on the ADD button, open the modal with blank values 
 document.getElementById("AddBtn").onclick = function() {
     for (item in cols) {
-        document.getElementById(cols[item]).value = "";
+        document.getElementById(cols[item]).value = ""; 
+        if (cols[item]=="contractid" && cid!="") {
+            document.getElementById(cols[item]).value = cid;
+            }
         }
     modal.style.display = "block";
     }
 
 //In the modal when use clicks the SUBMIT button create a JSON string and return it to FLASK
-//If the create date is blank then INSERT, else UPDATE record
+//Flask passess and UPSERT to the database, the table is also updated on the screen
 document.getElementById("SubBtn").onclick = function() {
     dd={}
     for(item in cols){
@@ -332,9 +337,12 @@ document.getElementById("SubBtn").onclick = function() {
     dd.updatedt=new Date().toISOString().slice(0, 19).replace('T', ' ');
     if (dd.createdt=="") {
         dd.createdt=dd.updatedt;
+        table.addData(dd);
         }
+    else {
+//        table.updateData(dd);  This needs to be fixed, should work as 'index' set in table variable
+    }
     dd.upduserid = userid;
-    table.addRow(dd, true);
     $.ajax({
         type: "POST", dataType: "json", contentType: "application/json",
         url: "/"+module+"/upsert",

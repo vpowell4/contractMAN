@@ -1,0 +1,27 @@
+{% set module = 'login' %}
+{% extends "base.html" %}
+{% block content %}
+{% include "nav.html" %}
+<h1 id="login-header">Login</h1>
+<form action="login" method="post">
+    <div class="container">
+        <div class="row">
+            <label for="email"><b>Email</b></label>
+        </div>
+        <div class="row">
+            <input type="text" id='email' placeholder="Enter email" name="email" required>
+        </div>
+        <br>
+        <div class="row">
+            <label for="password"><b>Password</b></label>
+        </div>
+        <div class="row">
+            <input type="password" id='password' placeholder="Enter Password" name="password" required>
+        </div>
+        <br>
+        <div class="row">
+            <button type="submit">Login</button>
+        </div>
+    </div>
+</form>
+{% endblock %}
