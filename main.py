@@ -35,21 +35,20 @@ def table_meta(table,type):
 def getbasedata():
     if request.method == 'POST':
         content = request.get_json()
-        print(content)
-        if (content["status"]=="" and content["cid"]=="" and content["sid"]=="" ):
-            data=table_data("SELECT * FROM "+content["module"].title()+"s FOR JSON PATH","one")
-        elif (content["status"]!="" and content["cid"]=="" and content["sid"]=="" ):
-            data=table_data("SELECT * FROM "+content["module"].title()+"s WHERE status='"+content["status"]+"' FOR JSON PATH","one")
-        elif (content["status"]=="" and content["cid"]!="" and content["sid"]=="" ):
-            data=table_data("SELECT * FROM "+content["module"].title()+"s WHERE contractid='"+str(content["cid"])+"' FOR JSON PATH","one")
-        elif (content["status"]=="" and content["cid"]=="" and content["sid"]!="" ):
-            data=table_data("SELECT * FROM "+content["module"].title()+"s WHERE supplierid='"+str(content["sid"])+"' FOR JSON PATH","one")
+        execstring="SELECT * FROM "+content["module"].title()+"s"
+        if (content["status"]!=""):
+            execstring=execstring+" WHERE status='"+content["status"]+"'"
+        elif (content["cid"]!=""):
+            execstring=execstring+" WHERE contractid='"+str(content["cid"])+"'"
+        elif (content["sid"]!="" ):
+            execstring=execstring+" WHERE supplierid='"+str(content["sid"])+"'"
+        data=table_data("SELECT CAST(("+execstring+" FOR JSON PATH) AS VARCHAR(MAX))","one")
         return data[0]
 
 @app.route("/")
 def home():
     results=table_data("EXECUTE DASHBOARD_STATS","all")
-    dialog=table_data("SELECT * FROM Dialog FOR JSON PATH","one")
+    dialog=table_data("SELECT * FROM Dialogs FOR JSON PATH","one")
     return render_template("home.html",contracts=results[1][3],attention=results[1][1], warning=results[1][2],
         issues=results[2][3],risks=results[3][3],changes=results[0][3],dialog=dialog)
 
@@ -69,7 +68,8 @@ def about():
 def contracts():
     status=request.args.get('action', '')
     columns=table_meta(table="Contracts",type="columns")
-    return render_template("contracts.html",columns=columns,status=status,sid="",cid="", id="contractid",userid=current_userid)
+    return render_template("contracts.html",columns=columns,status=status,
+                sid="",cid="", id="contractid",userid=current_userid)
 
 @app.route('/contract/upsert', methods=['POST'])
 def contractupsert():
@@ -173,7 +173,6 @@ def suppliers():
 @app.route('/supplier/upsert', methods=['POST'])
 def supplierupsert():
     data = request.get_json()
-    print("hello => "+data)
     result = table_data("EXECUTE SUPPLIERS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
     return data
 
@@ -203,8 +202,7 @@ def actordelete():
 @app.route('/dialog/insert', methods=['POST'])
 def dialoginsert():
     data = request.get_json()
-    print(data)
- #   result = table_data("EXECUTE DIALOG_INSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    result = table_data("EXECUTE DIALOGS_INSERT @JSONINFO='"+json.dumps(data)+"'","exe")
     return data
 
 if __name__ == "__main__":

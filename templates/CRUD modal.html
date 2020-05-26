@@ -1,35 +1,33 @@
 {% block CRUDmodal %}
 
-<div class="container">
-    <button id="AddBtn">+Add</button>
-    <p>
-    <div class="row">
+<div class="container-fluid">
+    <div class="row" style="padding-left: 5%;padding-right: 5%;">
+        <button id="AddBtn">+Add</button>
+        <p>
         <div id="table"></div>
     </div>
-</div>
-<br>
-<div class="container">
-    <div class="row">
+    <br>
+<!-- Detail of single row table and comments entry fields for dialogue -->
+    <div class="row" style="padding-left: 5%;padding-right: 5%;">
         <div class="col">
             <div id="SelectedDataTable"></div>			
         </div>
         <div class="col">
             <div class="input-group">
-                <div class="input-group-prepend">
                 <span class="input-group-text font-weight-bold">Enter comments here</span>
-                </div>
                 <textarea id="DialogText" class="form-control" aria-label="With textarea"></textarea>
             </div>
+            <br>
             <div class="text-right">
-                <button id="DialogSubmit" class="btn btn-outline-secondary my-2 my-sm-0" type="button">Submit</button>
+                <button id="DialogSubmit" class="btn btn-outline-secondary" type="button">Submit</button>
             </div>
         </div>
     </div>
-</div>
-<!-- Dialogue table -->
-<p>
-<div class="container">
-    <div id="DialogDataTable"></div>			
+    <!-- Dialogue table -->
+    <br>
+    <div class="row" style="padding-left: 5%;padding-right: 5%;">
+        <div id="DialogDataTable"></div>			
+    </div>
 </div>
 <!-- The Modal -->
 <div id="AddModal" class="modal"style="overflow-y:auto;">
@@ -118,23 +116,25 @@
 	</div>
 </div>
 <script>
-// Data for the Table
+// Base parameters (data inserted by JINJA from FLASK main.py)
 var module = '{{module|safe}}';
 var userid = '{{userid}}';
 var cid = '{{cid}}'
 var sid = '{{sid}}'
 var status = '{{status}}'
-var data = $.ajax({
-    type: "POST", dataType: "json", contentType: "application/json",
+// Get the Data for the main Table (this calls a function which calls a database stored procedure)
+// The only data returned is the data which the user is authorised to see
+var TableData = $.ajax({
+    type: "POST", dataType: "json", contentType: "application/json",async: false,
     url: "/getbasedata",
     data: JSON.stringify({module:module,userid:userid,cid:cid,sid:sid,status:status}),
-    async: false,
     success: function(results) {return results;},
     error: function(err) {console.log(err);}
     }).responseJSON;
-// Create the Table views
+console.log("TableData : "+TableData)
 var cols = {{columns|safe}};    
 var id = '{{id}}';
+// For each module list which fields are n ot visable in the modal display
 var noview = []
 switch (module) {
     case 'contract' :
@@ -199,6 +199,7 @@ for (item in cols) {
             visible:visible})
     }
 }
+// Add Issue, Risk and Change buttons to contract or supplier module tables
 if(module == 'contract' || module == 'supplier'){
     var Issuebtn = function(cell, formatterParams){
         return '<button type="button" class="btn-warning">I </button>';};
@@ -227,20 +228,22 @@ if(module == 'contract' || module == 'supplier'){
 // console.log(JSON.stringify(colsview, null, 4));
 // Create the Table
 var selectedData=[]
-var DialogData=[]
 var selectedDataTable = new Tabulator("#SelectedDataTable",{
     columns:[{title:"Description",field:"description"},{title:"Value",field:"value"}],
     addRowPos:"bottom",layout:"fitColumns"
     });
+var DialogData=[]
 var DialogDataTable = new Tabulator("#DialogDataTable",{
     data:DialogData,
-    columns:[{title:"Type",field:"type"},{title:"Userid",field:"upduserid"},
-            {title:"Date",field:"createdt"},{title:"Comments",field:"comments"}],
+    columns:[{title:"Type",field:"type"},{title:"Comments",field:"comments"},
+            {title:"Userid",field:"upduserid"},
+            {title:"Date",field:"createdt"}],
     pagination:"local",paginationAddRow:"table",paginationSize:20,
     addRowPos:"bottom",layout:"fitColumns"
     });
+console.log("HELLO "+TableData)
 var table = new Tabulator("#table", {
-        data:data,selectable:1,
+        data:TableData,selectable:1,
         pagination:"local",paginationAddRow:"table",paginationSize:20,
         placeholder:"No Data Available",height:"70%",
         persistence:{sort:true,columns:true}, persistenceID:"Persistance".concat(userid),
@@ -274,14 +277,30 @@ var table = new Tabulator("#table", {
         },
     });
 
-
-// When the user clicks on the CANCEL button in the modal close the modal
+// When user presses on submit button for dialog, record is added to dialog table
 document.getElementById("DialogSubmit").onclick = function() {
-    alert(" HELLO ")
         Dialog={}
+        Dialog.parentid = "0";
+        Dialog.contractid = table.getSelectedData()[0]['contractid'];
+        Dialog.clauseid = "0";
+        Dialog.issueid = "0";
+        Dialog.riskid = "0";
+        Dialog.changeid = "0";
+        Dialog.supplierid = "0";
+        if (module="issue") {
+            Dialog.issueid = table.getSelectedData()[0]['issueid'];
+            }
+        else if (module="risk") {
+            Dialog.riskid = table.getSelectedData()[0]['riskid'];
+            }
+        else if (module="change") {
+            Dialog.changeid = table.getSelectedData()[0]['changeid'];
+            }
         Dialog.comments=document.getElementById("DialogText").value
+        Dialog.createdt=new Date().toISOString().slice(0, 19).replace('T', ' ');
         Dialog.upduserid=userid
-        Dialog.updatedt=new Date().toISOString().slice(0, 19).replace('T', ' ');
+        Dialog.status="Normal"
+        DialogDataTable.addRow(Dialog, true);
         $.ajax({
             type: "POST", dataType: "json", contentType: "application/json",
             url: "/dialog/insert",
@@ -315,6 +334,7 @@ document.getElementById("SubBtn").onclick = function() {
         dd.createdt=dd.updatedt;
         }
     dd.upduserid = userid;
+    table.addRow(dd, true);
     $.ajax({
         type: "POST", dataType: "json", contentType: "application/json",
         url: "/"+module+"/upsert",
