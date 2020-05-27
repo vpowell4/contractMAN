@@ -26,16 +26,20 @@ def table_data(sql,type):
 @app.route("/getbasedata", methods=['POST'])
 def getbasedata():
     if request.method == 'POST':
-# Which contracts is this person allowed to see ?
-        contracts="(SELECT contractid FROM accesss where actorid = (SELECT actorid FROM Actors WHERE email='"+session['current_user']+"'))"
         content = request.get_json()
-        execstring="SELECT * FROM "+content["module"].title()+"s WHERE contractid in "+contracts
-        if (content["status"]!=""):
-            execstring=execstring+" AND status='"+content["status"]+"'"
-        elif (content["cid"]!=""):
-            execstring=execstring+" AND contractid='"+str(content["cid"])+"'"
-        elif (content["sid"]!="" ):
-            execstring=execstring+" AND supplierid='"+str(content["sid"])+"'"
+# Which contracts is this person allowed to see ?
+        if (content['module']=="actor") :
+            execstring="SELECT * FROM "+content["module"].title()+"s"
+        else :
+            contracts="(SELECT contractid FROM accesss where actorid = (SELECT actorid FROM Actors WHERE email='"+session['current_user']+"'))"
+
+            execstring="SELECT * FROM "+content["module"].title()+"s WHERE contractid in "+contracts
+            if (content["status"]!=""):
+                execstring=execstring+" AND status='"+content["status"]+"'"
+            elif (content["cid"]!=""):
+                execstring=execstring+" AND contractid='"+str(content["cid"])+"'"
+            elif (content["sid"]!="" ):
+                execstring=execstring+" AND supplierid='"+str(content["sid"])+"'"
         data=table_data("SELECT CAST(("+execstring+" FOR JSON PATH) AS VARCHAR(MAX))","one")
         return data[0]
 
@@ -71,7 +75,7 @@ def request_loader(request):
     user.id = email
     # DO NOT ever store passwords in plaintext and always compare password
     # hashes using constant-time comparison!
-    user.is_authenticated = request.form['password'] == users[email]['password']
+    #user.is_authenticated = request.form['password'] == users[email]['password']
     return user
 
 @app.route('/login',methods=['GET', 'POST'])
@@ -79,7 +83,6 @@ def login():
     if request.method == 'GET':
         return render_template("login.html")
     email = request.form['email']
-    print(users)
     if request.form['password'] == users[email]['password']:
         user = User()
         user.id = email
@@ -296,7 +299,7 @@ def actordelete():
 def accessbycontract(cid=id):
     columns=table_meta(table="Accesss",type="columns")
     actors=table_data("SELECT actorid, email FROM Actors FOR JSON PATH","one")
-    return render_template("Accesss.html",columns=columns,actors=json.loads(actors[0]),
+    return render_template("accesss.html",columns=columns,actors=json.loads(actors[0]),
                 cid=cid,userid=session['current_user'])
 
 @app.route('/dialog/insert', methods=['POST'])
@@ -305,6 +308,18 @@ def dialoginsert():
     data = request.get_json()
     result = table_data("EXECUTE DIALOGS_INSERT @JSONINFO='"+json.dumps(data)+"'","exe")
     return data
+
+@app.route('/register', methods=['GET','POST'])
+def register():
+    if request.method == 'GET':
+            return render_template("register.html")
+    email = request.form['email']
+    userid = request.form['userid']
+    password = request.form['password']
+    data={'userid':userid,'password':password,'email':email}
+    print(data)
+    result = table_data("EXECUTE REGISTER_INSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    return render_template("register.html")
 
 if __name__ == "__main__":
     app.run(debug=False)

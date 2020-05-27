@@ -1,5 +1,4 @@
 {% block CRUDmodal %}
-
 <div class="container-fluid">
     <div class="row" style="padding-left: 5%;padding-right: 5%;">
         <div class="row"></div>
@@ -206,7 +205,7 @@ for (item in cols) {
             visible:visible})
     }
 }
-// Add Issue, Risk and Change buttons to contract or supplier module tables
+// Add Access, Issue, Risk and Change buttons to contract or supplier module tables
 if(module == 'contract' || module == 'supplier'){
     var Accessbtn = function(cell, formatterParams){
         return '<button type="button" class="btn-warning">A </button>';};
@@ -225,15 +224,6 @@ if(module == 'contract' || module == 'supplier'){
             cellClick:function(e, cell){window.location.href ="/issue/contractid/"+cell.getRow().getData().contractid}})
         colsview.unshift({formatter:Accessbtn, width:10, hozAlign:"center",
             cellClick:function(e, cell){window.location.href ="/access/contractid/"+cell.getRow().getData().contractid}})
-        }
-    else {
-// TO BE IMPLEMENTED LATER
-//        colsview.unshift({formatter:Riskbtn, width:10, hozAlign:"center",
-//            cellClick:function(e, cell){window.location.href ="/risk/supplierid/"+cell.getRow().getData().supplierid}})
-//        colsview.unshift({formatter:Changebtn, width:10, hozAlign:"center",
-//            cellClick:function(e, cell){window.location.href ="/change/supplierid/"+cell.getRow().getData().supplierid}})
-//        colsview.unshift({formatter:Issuebtn, width:10, hozAlign:"center",
-//            cellClick:function(e, cell){window.location.href ="/issue/supplierid/"+cell.getRow().getData().supplierid}})
         }
     }
 // console.log(JSON.stringify(colsview, null, 4));
