@@ -7,11 +7,9 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = 'super really string'  # Change this!
 
-current_userid = "vpowell4"
-server = "RYANSPC\SQLEXPRESS"
-database = "contractmanager"
-
 def table_data(sql,type):
+    server = "RYANSPC\SQLEXPRESS"
+    database = "contractmanager"
     cnxn = pyodbc.connect("Driver={SQL Server Native Client 11.0};Server="+server+
                             ";Database="+database+";Trusted_Connection=yes;")
     cursor = cnxn.cursor() 
@@ -28,14 +26,16 @@ def table_data(sql,type):
 @app.route("/getbasedata", methods=['POST'])
 def getbasedata():
     if request.method == 'POST':
+# Which contracts is this person allowed to see ?
+        contracts="(SELECT contractid FROM accesss where actorid = (SELECT actorid FROM Actors WHERE email='"+session['current_user']+"'))"
         content = request.get_json()
-        execstring="SELECT * FROM "+content["module"].title()+"s"
+        execstring="SELECT * FROM "+content["module"].title()+"s WHERE contractid in "+contracts
         if (content["status"]!=""):
-            execstring=execstring+" WHERE status='"+content["status"]+"'"
+            execstring=execstring+" AND status='"+content["status"]+"'"
         elif (content["cid"]!=""):
-            execstring=execstring+" WHERE contractid='"+str(content["cid"])+"'"
+            execstring=execstring+" AND contractid='"+str(content["cid"])+"'"
         elif (content["sid"]!="" ):
-            execstring=execstring+" WHERE supplierid='"+str(content["sid"])+"'"
+            execstring=execstring+" AND supplierid='"+str(content["sid"])+"'"
         data=table_data("SELECT CAST(("+execstring+" FOR JSON PATH) AS VARCHAR(MAX))","one")
         return data[0]
 
@@ -43,16 +43,14 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-users = {'foo@bar.tld': {'password': 'secret'},'vpowell4@ms.com':{'password':'testing'}}
-
 def usersload():
     data=table_data("SELECT CAST((SELECT email,actorid,password FROM Actors FOR JSON PATH) AS VARCHAR(MAX))","one")
     user={}
     for row in json.loads(data[0]) :
-        user={'email':row['email'],'actorid':row['actorid'],'password':row['password']}
+        user[row['email']]={'password':row['password']}
     return user
 
-# users = usersload()
+users=usersload()
 
 class User(UserMixin):
     pass
@@ -81,11 +79,13 @@ def login():
     if request.method == 'GET':
         return render_template("login.html")
     email = request.form['email']
+    print(users)
     if request.form['password'] == users[email]['password']:
         user = User()
         user.id = email
         login_user(user)
         session['logged_in'] = True
+        session['current_user'] = email
         return redirect(url_for('home'))
     return render_template('login.html')
 
@@ -96,7 +96,7 @@ def logout():
     user.authenticated = False
     logout_user()
     session['logged_in'] = False
-    return "Logged Out"
+    return redirect(url_for('login'))
 
 @login_manager.unauthorized_handler
 def unauthorized_handler():
@@ -138,7 +138,7 @@ def contracts():
     status=request.args.get('action', '')
     columns=table_meta(table="Contracts",type="columns")
     return render_template("contracts.html",columns=columns,status=status,
-                sid="",cid="", id="contractid",userid=current_userid)
+                sid="",cid="", id="contractid",userid=session['current_user'])
 
 @app.route('/contract/upsert', methods=['POST'])
 @login_required
@@ -161,7 +161,7 @@ def clause(cid=id):
     contract=table_data("SELECT * FROM Contracts WHERE contractid='"+cid+"'FOR JSON PATH","one")
     columns=table_meta(table="Clauses",type="columns")
     return render_template("contract.html",columns=columns,status="",cid=cid,sid="",
-                            contract=contract[0],id="contractid",userid=current_userid)
+                            contract=contract[0],id="contractid",userid=session['current_user'])
 
 
 @app.route("/issues")
@@ -170,14 +170,14 @@ def issues():
     contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
     columns=table_meta(table="Issues",type="columns")
     return render_template("issues.html",columns=columns,id="issueid",cid="",
-            contracts=json.loads(contracts[0]),userid=current_userid)
+            contracts=json.loads(contracts[0]),userid=session['current_user'])
 
 @app.route("/issue/contractid/<cid>")
 @login_required
 def issuesbyconttact(cid=id):
     columns=table_meta(table="Issues",type="columns")
     return render_template("issues.html",columns=columns,
-            status="",cid=cid,sid="",id="issueid",userid=current_userid)
+            status="",cid=cid,sid="",id="issueid",userid=session['current_user'])
 
 @app.route('/issue/upsert', methods=['POST'])
 @login_required
@@ -199,13 +199,13 @@ def contractrisks():
     contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
     columns=table_meta(table="Risks",type="columns")
     return render_template("risks.html",columns=columns,id="riskid",
-            contracts=json.loads(contracts[0]),userid=current_userid)
+            contracts=json.loads(contracts[0]),userid=session['current_user'])
 
 @app.route("/risk/contractid/<cid>")
 @login_required
 def risksbyconttact(cid=id):
     columns=table_meta(table="Risks",type="columns")
-    return render_template("Risks.html",columns=columns,status="",cid=cid,sid="",id="riskid",userid=current_userid)
+    return render_template("Risks.html",columns=columns,status="",cid=cid,sid="",id="riskid",userid=session['current_user'])
 
 @app.route('/risk/upsert', methods=['POST'])
 @login_required
@@ -227,14 +227,14 @@ def contractchanges():
     contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
     columns=table_meta(table="Changes",type="columns")
     return render_template("changes.html",columns=columns,id="changeid",cid="",
-             contracts=json.loads(contracts[0]),userid=current_userid)    
+             contracts=json.loads(contracts[0]),userid=session['current_user'])    
 
 @app.route("/change/contractid/<cid>")
 @login_required
 def changesbyconttact(cid=id):
     columns=table_meta(table="Changes",type="columns")
     return render_template("Changes.html",columns=columns,status="",
-            cid=cid,sid="",id="changeid",userid=current_userid)
+            cid=cid,sid="",id="changeid",userid=session['current_user'])
 
 @app.route('/change/upsert', methods=['POST'])
 @login_required
@@ -255,7 +255,7 @@ def changedelete():
 @login_required
 def suppliers():
     columns=table_meta(table="Suppliers",type="columns")
-    return render_template("suppliers.html",columns=columns,id="supplierid",userid=current_userid)
+    return render_template("suppliers.html",columns=columns,id="supplierid",userid=session['current_user'])
 
 @app.route('/supplier/upsert', methods=['POST'])
 @login_required
@@ -275,7 +275,7 @@ def supplierdelete():
 @login_required
 def actors():
     columns=table_meta(table="Actors",type="columns")
-    return render_template("actors.html",columns=columns,id="email",userid=current_userid)
+    return render_template("actors.html",columns=columns,id="email",userid=session['current_user'])
 
 @app.route('/actor/upsert', methods=['POST'])
 @login_required
@@ -291,6 +291,14 @@ def actordelete():
     result = table_data("EXECUTE ACTORS_DELETE @EMAIL='"+data+"'","exe")
     return data
 
+@app.route("/access/contractid/<cid>")
+@login_required
+def accessbycontract(cid=id):
+    columns=table_meta(table="Accesss",type="columns")
+    actors=table_data("SELECT actorid, email FROM Actors FOR JSON PATH","one")
+    return render_template("Accesss.html",columns=columns,actors=json.loads(actors[0]),
+                cid=cid,userid=session['current_user'])
+
 @app.route('/dialog/insert', methods=['POST'])
 @login_required
 def dialoginsert():
@@ -299,5 +307,4 @@ def dialoginsert():
     return data
 
 if __name__ == "__main__":
-    usersload();
     app.run(debug=False)

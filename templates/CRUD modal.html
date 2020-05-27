@@ -2,9 +2,13 @@
 
 <div class="container-fluid">
     <div class="row" style="padding-left: 5%;padding-right: 5%;">
-        <button id="AddBtn">+Add</button>
+        <div class="row"></div>
+            <button id="AddBtn">+Add</button>
+        </div>
         <p>
-        <div id="table"></div>
+        <div class="row"></div>
+            <div id="table"></div>
+        </div>
     </div>
     <br>
 <!-- Detail of single row table and comments entry fields for dialogue -->
@@ -54,6 +58,8 @@
                             {%set noview= ["changeid","createdt","updatedt","upduserid"] %}
                         {% elif module=="supplier" %}
                             {%set noview= ["supplierid","createdt","updatedt","upduserid"] %}
+                        {% elif module=="access" %}
+                            {%set noview= ["accessid","contractid","createdt","updatedt","upduserid"] %}
                         {% else %}
                             {%set noview= ["createdt","updatedt","upduserid"] %}
                         {% endif %}
@@ -66,10 +72,10 @@
                                 <option>Warning</option>
                                 <option>Attention</option>
                             </select>
-                            {% elif item=="active" %}
+                            {% elif item in ["active","read","add","upd","del"] %}
                             <select class="form-control" type="text" id="{{item}}">
-                                <option>Yes</option>
-                                <option>No</option>
+                                <option>True</option>
+                                <option>False</option>
                             </select>
                             {% elif item in ["priority","impact"] %}
                             <select class="form-control" type="text" id="{{item}}">
@@ -91,6 +97,12 @@
                             <select class="form-control" type="text" id="{{item}}">
                             {% for contsel in contracts%}
                             <option value="{{contsel['contractid']}}">{{contsel['title']}}</option>
+                            {% endfor %}
+                            </select>
+                            {% elif item=="actorid" %}
+                            <select class="form-control" type="text" id="{{item}}">
+                            {% for actorsel in actors%}
+                            <option value="{{actorsel['actorid']}}">{{actorsel['email']}}</option>
                             {% endfor %}
                             </select>
                             {% elif item in ["startdate","enddate","duedate","milestonedate"] %}
@@ -147,6 +159,9 @@ switch (module) {
     case 'supplier' :
         noview = ['supplierid'];
         break;
+    case 'access' :
+        noview = ['accessid'];
+        break;
     }
 // Create the table columns view make visable only columns needed, and add href
 var colsview = []
@@ -193,6 +208,8 @@ for (item in cols) {
 }
 // Add Issue, Risk and Change buttons to contract or supplier module tables
 if(module == 'contract' || module == 'supplier'){
+    var Accessbtn = function(cell, formatterParams){
+        return '<button type="button" class="btn-warning">A </button>';};
     var Issuebtn = function(cell, formatterParams){
         return '<button type="button" class="btn-warning">I </button>';};
     var Riskbtn = function(cell, formatterParams){
@@ -206,6 +223,8 @@ if(module == 'contract' || module == 'supplier'){
             cellClick:function(e, cell){window.location.href ="/change/contractid/"+cell.getRow().getData().contractid}})
         colsview.unshift({formatter:Issuebtn, width:10, hozAlign:"center",
             cellClick:function(e, cell){window.location.href ="/issue/contractid/"+cell.getRow().getData().contractid}})
+        colsview.unshift({formatter:Accessbtn, width:10, hozAlign:"center",
+            cellClick:function(e, cell){window.location.href ="/access/contractid/"+cell.getRow().getData().contractid}})
         }
     else {
 // TO BE IMPLEMENTED LATER
@@ -222,7 +241,7 @@ if(module == 'contract' || module == 'supplier'){
 var selectedData=[]
 var selectedDataTable = new Tabulator("#SelectedDataTable",{
     columns:[{title:"Description",field:"description"},{title:"Value",field:"value"}],
-    addRowPos:"bottom",layout:"fitColumns"
+    addRowPos:"top",layout:"fitColumns"
     });
 // Create the Tables - second the table showing the dialogue
 var DialogData=[]
@@ -232,7 +251,7 @@ var DialogDataTable = new Tabulator("#DialogDataTable",{
             {title:"Userid",field:"upduserid"},
             {title:"Date",field:"createdt"}],
     pagination:"local",paginationAddRow:"table",paginationSize:20,
-    addRowPos:"bottom",layout:"fitColumns"
+    addRowPos:"top",layout:"fitColumns"
     });
 // Get the Data for the main Table (this calls a function which calls a database stored procedure)
 // The only data returned is the data which the user is authorised to see
@@ -249,7 +268,7 @@ var table = new Tabulator("#table", {
         pagination:"local",paginationAddRow:"table",paginationSize:20,
         placeholder:"No Data Available",height:"70%",
         persistence:{sort:true,columns:true}, persistenceID:"Persistance".concat(userid),
-        layout:"fitColumns",addRowPos:"bottom",
+        layout:"fitColumns",addRowPos:"top",
         columns:colsview,
 // When the SINGLE user clicks on a row in the table, update the row table
 // and change the dialog box to show only records for that contract
