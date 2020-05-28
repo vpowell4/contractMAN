@@ -1,36 +1,58 @@
 {% block CRUDmodal %}
-<div class="container-fluid">
-    <div class="row" style="padding-left: 5%;padding-right: 5%;">
-        <div class="row"></div>
-            <button id="AddBtn">+Add</button>
+<div id="accordion" >
+<!-- The main table -->
+    <div class="card">
+        <div class="card-header" id="headingOne">
+            <h5 class="mb-0">
+                <button class="btn btn-link" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                    <span style="text-transform:capitalize;">{{module}} Records</span>
+                </button>
+            </h5>
         </div>
-        <p>
-        <div class="row"></div>
-            <div id="table"></div>
+        <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
+            <div class="card-body">
+                <button id="AddBtn">+Add</button>
+                <div id="table"></div>
+            </div>
         </div>
-    </div>
-    <br>
+    <div>
 <!-- Detail of single row table and comments entry fields for dialogue -->
-    <div class="row" style="padding-left: 5%;padding-right: 5%;">
-        <div class="col">
-            <div id="SelectedDataTable"></div>			
+    <div class="card">
+        <div class="card-header" id="headingTwo">
+            <h5 class="mb-0">
+                <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                Record detail and Activity
+                </button>
+            </h5>
         </div>
-        <div class="col">
-            <div class="input-group">
-                <span class="input-group-text font-weight-bold">Enter comments here</span>
-                <textarea id="DialogText" class="form-control" aria-label="With textarea"></textarea>
-            </div>
-            <br>
-            <div class="text-right">
-                <button id="DialogSubmit" class="btn btn-outline-secondary" type="button">Submit</button>
+        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+            <div class="card-body">
+                <div id="SelectedDataTable"></div>			
             </div>
         </div>
     </div>
-    <!-- Dialogue table -->
-    <br>
-    <div class="row" style="padding-left: 5%;padding-right: 5%;">
-        <div id="DialogDataTable"></div>			
-    </div>
+<!-- Dialogue table -->
+        <div class="card">
+            <div class="card-header" id="headingThree">
+                <h5 class="mb-0">
+                    <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                    Dialogue
+                    </button>
+                </h5>
+            </div>
+            <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
+                <div class="input-group">
+                    <span class="input-group-text font-weight-bold">Enter comments here</span>
+                    <textarea id="DialogText" class="form-control" aria-label="With textarea"></textarea>
+                </div>
+                <div class="text-right">
+                    <button id="DialogSubmit" class="btn btn-outline-secondary" type="button">Submit</button>
+                </div>
+                <div class="card-body">
+                    <div id="DialogDataTable"></div>			
+                </div>
+            </div>
+        </div>
 </div>
 <!-- The Modal -->
 <div id="AddModal" class="modal"style="overflow-y:auto;">
@@ -65,13 +87,28 @@
                         {% for item in columns if not item in noview %} 
                         <div class="form-group">
                             <label for="{{item}}">{{item}}:</label>
-                            {% if item=="status" %}
+                            {% if item=="module" %}
+                            <select class="form-control" type="text" id="{{item}}">
+                                <option>Access</option>
+                                <option>Actors</option>
+                                <option>Contract</option>
+                                <option>Dialog</option>
+                                <option>Issues</option>
+                                <option>Risks</option>
+                                <option>Changes</option>
+                            </select>
+                            {% elif item=="status" %}
                             <select class="form-control" type="text" id="{{item}}">
                                 <option>Normal</option>
                                 <option>Warning</option>
                                 <option>Attention</option>
                             </select>
-                            {% elif item in ["active","read","add","upd","del"] %}
+                            {% elif item in ["active"] %}
+                            <select class="form-control" type="text" id="{{item}}">
+                                <option>Yes</option>
+                                <option>No</option>
+                            </select>
+                            {% elif item in ["read","add","upd","del"] %}
                             <select class="form-control" type="text" id="{{item}}">
                                 <option>True</option>
                                 <option>False</option>
@@ -129,7 +166,7 @@
 	</div>
 </div>
 <script>
-// Base parameters (data inserted by JINJA from FLASK main.py)
+// Base parameters (data inserted by from FLASK main.py)
 var module = '{{module|safe}}';
 var userid = '{{userid}}';
 var cid = '{{cid}}'
@@ -137,7 +174,7 @@ var sid = '{{sid}}'
 var status = '{{status}}'
 var cols = {{columns|safe}};    
 var id = '{{id}}';
-// For each module list which fields are n ot visable in the modal display
+// For each module list which fields are not visable in the modal display
 var noview = []
 switch (module) {
     case 'contract' :
@@ -205,6 +242,10 @@ for (item in cols) {
             visible:visible})
     }
 }
+// Reply button for dialogue
+var Replybtn = function(cell, formatterParams){
+    return '<button type="button" class="btn-warning">Reply</button>';};
+
 // Add Access, Issue, Risk and Change buttons to contract or supplier module tables
 if(module == 'contract' || module == 'supplier'){
     var Accessbtn = function(cell, formatterParams){
@@ -227,22 +268,33 @@ if(module == 'contract' || module == 'supplier'){
         }
     }
 // console.log(JSON.stringify(colsview, null, 4));
-// Create the Tables - first the table showing the selected row of data
+// Create the Tables - The table showing the selected row of data
 var selectedData=[]
 var selectedDataTable = new Tabulator("#SelectedDataTable",{
     columns:[{title:"Description",field:"description"},{title:"Value",field:"value"}],
     addRowPos:"top",layout:"fitColumns"
     });
-// Create the Tables - second the table showing the dialogue
+// Create the Tables - The table showing the dialogue
 var DialogData=[]
 var DialogDataTable = new Tabulator("#DialogDataTable",{
     data:DialogData,
-    columns:[{title:"Type",field:"type"},{title:"Comments",field:"comments"},
-            {title:"Userid",field:"upduserid"},
-            {title:"Date",field:"createdt"}],
-    pagination:"local",paginationAddRow:"table",paginationSize:20,
-    addRowPos:"top",layout:"fitColumns"
-    });
+    columns:[{title:"Type",field:"module",width:100, formatter:"link",
+                formatterParams:{urlPrefix:module+"/"+id+"/",urlField:id}},
+            {title:"Comments",field:"comments",width:700},
+            {title:"upduserid",field:"upduserid",width:150},
+            {title:"createdt",field:"createdt",width:150,formatter:"datetime", formatterParams:{
+                outputFormat:"DD/MM/YY HH:MM",invalidPlaceholder:"(invalid date)"},},
+            {title:"status",field:"status",width:100,formatter:function(cell, formatterParams){
+                var value = cell.getValue();
+                if(value == "Attention"){return "<span style='color:red;'>" + value + "</span>";}
+                else if (value == "Warning"){return "<span style='color:orange;'>" + value + "</span>";}
+                else {return "<span style='color:green;'>" + value + "</span>";}}
+            },
+            {formatter:Replybtn, width:80, hozAlign:"center",
+                cellClick:function(e, cell){window.location.href ="/dialog/contractid/"+cell.getRow().getData()}
+            }],
+            addRowPos:"top",layout:"fitColumns"
+            });
 // Get the Data for the main Table (this calls a function which calls a database stored procedure)
 // The only data returned is the data which the user is authorised to see
 var TableData = $.ajax({
@@ -289,28 +341,20 @@ var table = new Tabulator("#table", {
     });
 
 // When user presses on submit button for dialog, record is added to dialog table
-document.getElementById("DialogSubmit").onclick = function() {
-        Dialog={}
+document.getElementById("DialogSubmit").onclick = function() {   
+    Dialog={}
         Dialog.parentid = "0";
         Dialog.contractid = table.getSelectedData()[0]['contractid'];
-        Dialog.clauseid = "0";
-        Dialog.issueid = "0";
-        Dialog.riskid = "0";
-        Dialog.changeid = "0";
-        Dialog.supplierid = "0";
-        if (module="issue") {
-            Dialog.issueid = table.getSelectedData()[0]['issueid'];
-            }
-        else if (module="risk") {
-            Dialog.riskid = table.getSelectedData()[0]['riskid'];
-            }
-        else if (module="change") {
-            Dialog.changeid = table.getSelectedData()[0]['changeid'];
-            }
+        if (module=="clause") {Dialog.clauseid = table.getSelectedData()[0]['clauseid']} else {Dialog.clauseid =  "0"};
+        if (module=="issue") {Dialog.issueid = table.getSelectedData()[0]['issueid']} else {Dialog.issueid =  "0"};
+        if (module=="risk") {Dialog.riskid = table.getSelectedData()[0]['riskid']} else {Dialog.riskid =  "0"};
+        if (module=="change") {Dialog.changeid = table.getSelectedData()[0]['changeid']} else {Dialog.changeid =  "0"};
+        if (module=="supplier") {Dialog.supplierid = table.getSelectedData()[0]['supplierid']} else {Dialog.supplierid =  "0"};
         Dialog.comments=document.getElementById("DialogText").value
         Dialog.createdt=new Date().toISOString().slice(0, 19).replace('T', ' ');
         Dialog.upduserid=userid
         Dialog.status="Normal"
+        Dialog.module=module
         DialogDataTable.addRow(Dialog, true);
         $.ajax({
             type: "POST", dataType: "json", contentType: "application/json",

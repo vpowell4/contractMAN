@@ -48,7 +48,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 def usersload():
-    data=table_data("SELECT CAST((SELECT email,actorid,password FROM Actors FOR JSON PATH) AS VARCHAR(MAX))","one")
+    data=table_data("SELECT CAST((SELECT email,actorid,password FROM Actors WHERE active='yes' FOR JSON PATH) AS VARCHAR(MAX))","one")
     user={}
     for row in json.loads(data[0]) :
         user[row['email']]={'password':row['password']}
@@ -83,13 +83,16 @@ def login():
     if request.method == 'GET':
         return render_template("login.html")
     email = request.form['email']
-    if request.form['password'] == users[email]['password']:
-        user = User()
-        user.id = email
-        login_user(user)
-        session['logged_in'] = True
-        session['current_user'] = email
-        return redirect(url_for('home'))
+    if (email in list(users.keys())) :
+        if request.form['password'] == users[email]['password']:
+            user = User()
+            user.id = email
+            login_user(user)
+            session['logged_in'] = True
+            session['current_user'] = email
+            return redirect(url_for('home'))
+        else : 
+            print("NO SUCH USER")
     return render_template('login.html')
 
 @app.route('/logout')
@@ -317,7 +320,6 @@ def register():
     userid = request.form['userid']
     password = request.form['password']
     data={'userid':userid,'password':password,'email':email}
-    print(data)
     result = table_data("EXECUTE REGISTER_INSERT @JSONINFO='"+json.dumps(data)+"'","exe")
     return render_template("register.html")
 
