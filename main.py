@@ -27,7 +27,6 @@ def table_data(sql,type):
 def getbasedata():
     if request.method == 'POST':
         content = request.get_json()
-        print("Content ===> "+json.dumps(content))
 # Which contracts is this person allowed to see ?
         if (content['module']=="actor") :
             execstring="SELECT * FROM "+content["module"].title()+"s"
@@ -42,7 +41,6 @@ def getbasedata():
                 execstring=execstring+" AND contractid='"+str(content["cid"])+"'"
             elif (content["sid"]!="" ):
                 execstring=execstring+" AND supplierid='"+str(content["sid"])+"'"
-        print("Exec ==>"+execstring)
         data=table_data("SELECT CAST(("+execstring+" FOR JSON PATH) AS VARCHAR(MAX))","one")
         if (data==None):
             data[0]=""
@@ -125,9 +123,18 @@ def table_meta(table,type):
 @app.route("/home")
 @login_required
 def home():
+    stats = table_data("EXECUTE DASHBOARD_STATS02 @CURRENT_USER='"+session['current_user']+"'","all")
+    i=[]; r=[]; c=[]; s=[];  t=[]
+    for row in stats:
+        i.append(row[0]);
+        r.append(row[1]);
+        c.append(row[2]);
+        s.append(row[3]);
+        t.append(row[4]);
     results=table_data("EXECUTE DASHBOARD_STATS  @CURRENT_USER='"+session['current_user']+"'","all")
     return render_template("home.html",contracts=results[1][3],attention=results[1][1], warning=results[1][2],
-        issues=results[2][3],risks=results[3][3],changes=results[0][3],userid=session['current_user'])
+        issues=results[2][3],risks=results[3][3],changes=results[0][3],userid=session['current_user'],
+        stats={'issues':i,'risks':r,'changes':c,'suppliers':s,'contracts':t})
 
 @app.route("/about")
 def about():

@@ -64,6 +64,14 @@
     </div>
     <div class="row" style="padding: 10px;">
         <div class="col-6">
+            <canvas id="irac-activity-bar-chart" width="300" height="150" ></canvas>
+        </div>
+        <div class="col-6">
+            <canvas id="dialog-activity-bar-chart" width="300" height="150" ></canvas>
+        </div>
+    </div>
+    <div class="row" style="padding: 10px;">
+        <div class="col-6">
             <canvas id="overdue-clauses-bar-chart" width="200" height="100" ></canvas>
         </div>
         <div class="col-6">
@@ -74,17 +82,40 @@
         <div id="DialogDataTable"></div>
     </div>
 </div>
-
+<!-- Dialogue Modal -->
+<div id="DialogModal" class="modal"style="overflow-y:auto;">
+	<div class="modal-dialog" >
+		<div class="modal-content">
+			<div class="modal-header">
+                <h3>Dialogue history</h3>
+				<span class="dclose-btn">&times;</span>
+			</div>
+			<div class="modal-body">
+                <div class="container">
+					The Body
+                </div>
+			</div>
+			<div class="modal-footer">
+                <div class="row">
+                    <div class="col"><button type="button" class="btn btn-success" id="dSubBtn" >Submit</button></div>
+                    <div class="col"><button type="button" class="btn btn-secondary" id="dCanBtn" data-dismiss="modal">Cancel</button></div>
+                </div>
+			</div>
+		</div>
+	</div>
+</div>
 <script>
 
-    //dialog={{dialog|safe}}
 dialog=[]
-userid='{{userid}}'
+var module='home'
+var userid='{{userid}}'
+var activityData1 = {{stats|safe}}
+var dialogmodal = document.getElementById("DialogModal");
 
 //next 12 months
 var theMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var today = new Date();
-var aMonth = today.getMonth();
+var aMonth = today.getMonth()+1;
 var i;
 var currMonths=[]
 for (i=0; i<12; i++) {
@@ -103,6 +134,30 @@ var contractclauses={attention:[65, 5, 80, 81, 56, 85, 40,0,0,0,0,1],
 
 var OverDue = ["1 Day", "3 Days","1 Wk", "2 Wks", "3 Wks", "1 Mth", "2 Mth", "3 Mth", "6 Mth", "9 Mth", "1 Yr", "> 1Yr"];
 
+// Issues, Risks, Changes, Suppliers, Contracts created Bar chart
+new Chart(document.getElementById("irac-activity-bar-chart"), {type: 'bar',
+    data: {labels: currMonths,
+            datasets:  [
+            {type: 'bar', label: 'Issues', backgroundColor: "green", data: activityData1.issues},
+            {type: 'bar', label: 'Risks', backgroundColor: "yellow", data: activityData1.risks},
+            {type: 'bar', label: 'Changes', backgroundColor: "blue", data: activityData1.changes},
+            {type: 'bar', label: 'Suppliers', backgroundColor: "orange", data: activityData1.suppliers},
+            {type: 'bar', label: 'Contracts', backgroundColor: "red", data: activityData1.contracts}                
+            ]},
+    options: {legend: { display: true }, title: {display: true,text: 'Activity (created records)'}}
+    });
+// Issues, Risks, Changes, Suppliers, Contracts created Bar chart
+new Chart(document.getElementById("dialog-activity-bar-chart"), {type: 'bar',
+    data: {labels: currMonths,
+            datasets:  [
+            {type: 'line', label: 'Issues', backgroundColor: "green", data: activityData1.issues},
+            {type: 'line', label: 'Risks', backgroundColor: "yellow", data: activityData1.risks},
+            {type: 'line', label: 'Changes', backgroundColor: "blue", data: activityData1.changes},
+            {type: 'line', label: 'Suppliers', backgroundColor: "orange", data: activityData1.suppliers},
+            {type: 'line', label: 'Contracts', backgroundColor: "red", data: activityData1.contracts}                
+            ]},
+    options: {legend: { display: true }, title: {display: true,text: 'Dialog (created records)'}}
+    });
 // Overdue Clauses Bar chart
 new Chart(document.getElementById("overdue-clauses-bar-chart"), {type: 'bar',
     data: {labels: OverDue,
@@ -129,40 +184,52 @@ new Chart(document.getElementById("contracts-pie-chart"), {type: 'doughnut',
           ]},
     options: {legend: { display: true }, title: {display: true,text: 'Contract Types'}}
     });
-// Reply button for dialogue
-    var Viewbtn = function(cell, formatterParams){
-        return '<button type="button" class="btn-warning">View</button>';};
 
-    var DialogData = $.ajax({
-        type: "POST", dataType: "json", contentType: "application/json", async: false,
-        url: "/getbasedata",
-        data: JSON.stringify({module:'dialog',userid:userid,cid:"",sid:"",status:""}),
-        success: function(results) {return results;},
-        error: function(err) {console.log(err);}
-        }).responseJSON;
-    var DialogDataTable = new Tabulator("#DialogDataTable",{
-        data:DialogData,
-        columns:[{title:"Type",field:"module",width:100,
-                    formatter:"link", cellClick:function(e, cell){
-                        alert("/"+cell.getRow().getData().module+
-                            "/contractid/"+cell.getRow().getData().contractid+
-                            "/"+cell.getRow().getData().issueid)}},
-                {title:"Comments",field:"comments",width:700},
-                {title:"upduserid",field:"upduserid",width:150},
-                {title:"createdt",field:"createdt",width:150,
-                    formatter:"datetime", formatterParams:{
-                        outputFormat:"DD/MM/YY HH:MM",invalidPlaceholder:"(invalid date)"},
-                    },
-                {title:"status",field:"status",width:100,formatter:function(cell, formatterParams){
-                    var value = cell.getValue();
-                    if(value == "Attention"){return "<span style='color:red;'>" + value + "</span>";}
-                    else if (value == "Warning"){return "<span style='color:orange;'>" + value + "</span>";}
-                    else {return "<span style='color:green;'>" + value + "</span>";}}
-                },
-                {formatter:Viewbtn, width:80, hozAlign:"center",
-                    cellClick:function(e, cell){window.location.href ="/dialog/contractid/"+cell.getRow().getData()}
-                }],
-                addRowPos:"top",layout:"fitColumns"
-                });
+var DialogData = $.ajax({
+    type: "POST", dataType: "json", contentType: "application/json", async: false,
+    url: "/getbasedata",
+    data: JSON.stringify({module:'dialog',userid:userid,cid:"",sid:"",status:""}),
+    success: function(results) {return results;},
+    error: function(err) {console.log(err);}
+    }).responseJSON;
+var DialogDataTable = new Tabulator("#DialogDataTable",{
+    data:DialogData, addRowPos:"top",layout:"fitColumns",
+    columns:[{title:"Type",field:"module",width:100,
+                formatter:"link", cellClick:function(e, cell){
+                    alert("/"+cell.getRow().getData().module+
+                        "/contractid/"+cell.getRow().getData().contractid+
+                        "/"+cell.getRow().getData().issueid)}},
+            {title:"Comments",field:"comments",width:700},
+            {title:"upduserid",field:"upduserid",width:150},
+            {title:"createdt",field:"createdt",width:150,formatter:"datetime",
+                    formatterParams:{outputFormat:"DD/MM/YY HH:MM",invalidPlaceholder:"(invalid date)"}},
+            {title:"status",field:"status",width:100,formatter:function(cell, formatterParams){
+                var value = cell.getValue();
+                if(value == "Attention"){return "<span style='color:red;'>" + value + "</span>";}
+                else if (value == "Warning"){return "<span style='color:orange;'>" + value + "</span>";}
+                else {return "<span style='color:green;'>" + value + "</span>";}}}
+            ],
+    rowClick:function(e, row){
+        dialogmodal.style.display = "block";
+        }
+    });
+// Get the <span> element that closes the modal
+     var dspan = document.getElementsByClassName("dclose-btn")[0];
+    
+    // When the user clicks on <span> (x), close the modal
+    dspan.onclick = function() {
+        dialogmodal.style.display = "none";
+        }
+    // When the user clicks on the CANCEL button in the modal close the modal
+    document.getElementById("dCanBtn").onclick = function() {
+        dialogmodal.style.display = "none";
+        }
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+        if (event.target == dialogmodal ) {
+            dialogmodal.style.display = "none";
+            }
+    }
+
 </script>
 {% endblock %}

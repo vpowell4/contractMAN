@@ -1,5 +1,5 @@
 {% block CRUDmodal %}
-<div id="accordion" >
+<div id="accordion">
 <!-- The main table -->
     <div class="card">
         <div class="card-header" id="headingOne">
@@ -135,7 +135,7 @@
                             <option value="{{contsel['contractid']}}">{{contsel['title']}}</option>
                             {% endfor %}
                             </select>
-                            {% elif item=="actorid" %}
+                            {% elif module=="Access" and item=="actorid" %}
                             <select class="form-control" type="text" id="{{item}}">
                             {% for actorsel in actors%}
                             <option value="{{actorsel['actorid']}}">{{actorsel['email']}}</option>
@@ -336,7 +336,7 @@ var TableData = $.ajax({
     success: function(results) {return results;},
     error: function(err) {console.log(err);}
     }).responseJSON;
-console.log("==="+JSON.stringify(TableData))
+
 // Create the Tables - finally the table showing the data
 var table = new Tabulator("#table", {
         data:TableData,selectable:1,
@@ -354,6 +354,7 @@ var table = new Tabulator("#table", {
             for (let[key,value] of Object.entries(selectedData)) {
                 selectedDataTable.addRow({description:key, value:value}, true);
                 }
+//            $('#collapseTwo').collapse('show');
             cid=selectedData["contractid"]
             var DialogData = $.ajax({
                 type: "POST", dataType: "json", contentType: "application/json", async: false,
