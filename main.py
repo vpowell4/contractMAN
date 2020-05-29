@@ -27,12 +27,14 @@ def table_data(sql,type):
 def getbasedata():
     if request.method == 'POST':
         content = request.get_json()
+        print("Content ===> "+json.dumps(content))
 # Which contracts is this person allowed to see ?
         if (content['module']=="actor") :
             execstring="SELECT * FROM "+content["module"].title()+"s"
+        elif (content['module']=="supplier") :
+            execstring="SELECT * FROM "+content["module"].title()+"s"
         else :
             contracts="(SELECT contractid FROM accesss where actorid = (SELECT actorid FROM Actors WHERE email='"+session['current_user']+"'))"
-
             execstring="SELECT * FROM "+content["module"].title()+"s WHERE contractid in "+contracts
             if (content["status"]!=""):
                 execstring=execstring+" AND status='"+content["status"]+"'"
@@ -40,7 +42,10 @@ def getbasedata():
                 execstring=execstring+" AND contractid='"+str(content["cid"])+"'"
             elif (content["sid"]!="" ):
                 execstring=execstring+" AND supplierid='"+str(content["sid"])+"'"
+        print("Exec ==>"+execstring)
         data=table_data("SELECT CAST(("+execstring+" FOR JSON PATH) AS VARCHAR(MAX))","one")
+        if (data==None):
+            data[0]=""
         return data[0]
 
 login_manager = LoginManager()
@@ -120,19 +125,9 @@ def table_meta(table,type):
 @app.route("/home")
 @login_required
 def home():
-    results=table_data("EXECUTE DASHBOARD_STATS","all")
-    dialog=table_data("SELECT * FROM Dialogs FOR JSON PATH","one")
+    results=table_data("EXECUTE DASHBOARD_STATS  @CURRENT_USER='"+session['current_user']+"'","all")
     return render_template("home.html",contracts=results[1][3],attention=results[1][1], warning=results[1][2],
-        issues=results[2][3],risks=results[3][3],changes=results[0][3],dialog=dialog)
-
-@app.route("/404")
-def page_not_found():
-    return render_template("404.html")
-
-@app.route("/config")
-@login_required
-def config():
-    return render_template("config.html")
+        issues=results[2][3],risks=results[3][3],changes=results[0][3],userid=session['current_user'])
 
 @app.route("/about")
 def about():
@@ -305,9 +300,18 @@ def accessbycontract(cid=id):
     return render_template("accesss.html",columns=columns,actors=json.loads(actors[0]),
                 cid=cid,userid=session['current_user'])
 
+@app.route('/access/upsert', methods=['POST'])
+@login_required
+def accessupsert():
+    data = request.get_json()
+    result = table_data("EXECUTE ACCESSS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    return data
+
 @app.route('/dialog/insert', methods=['POST'])
 @login_required
 def dialoginsert():
+    module=request.args.get('module')
+    print("module ===> "+module)
     data = request.get_json()
     result = table_data("EXECUTE DIALOGS_INSERT @JSONINFO='"+json.dumps(data)+"'","exe")
     return data

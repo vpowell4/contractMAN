@@ -165,6 +165,28 @@
 		</div>
 	</div>
 </div>
+<!-- Dialogue Modal -->
+<div id="DialogModal" class="modal"style="overflow-y:auto;">
+	<div class="modal-dialog" >
+		<div class="modal-content">
+			<div class="modal-header">
+                <h3>Dialogue history</h3>
+				<span class="dclose-btn">&times;</span>
+			</div>
+			<div class="modal-body">
+                <div class="container">
+					The Body
+                </div>
+			</div>
+			<div class="modal-footer">
+                <div class="row">
+                    <div class="col"><button type="button" class="btn btn-success" id="dSubBtn" >Submit</button></div>
+                    <div class="col"><button type="button" class="btn btn-secondary" id="dCanBtn" data-dismiss="modal">Cancel</button></div>
+                </div>
+			</div>
+		</div>
+	</div>
+</div>
 <script>
 // Base parameters (data inserted by from FLASK main.py)
 var module = '{{module|safe}}';
@@ -174,6 +196,10 @@ var sid = '{{sid}}'
 var status = '{{status}}'
 var cols = {{columns|safe}};    
 var id = '{{id}}';
+// Get the modal
+var modal = document.getElementById("AddModal");
+var dialogmodal = document.getElementById("DialogModal");
+
 // For each module list which fields are not visable in the modal display
 var noview = []
 switch (module) {
@@ -242,9 +268,6 @@ for (item in cols) {
             visible:visible})
     }
 }
-// Reply button for dialogue
-var Replybtn = function(cell, formatterParams){
-    return '<button type="button" class="btn-warning">Reply</button>';};
 
 // Add Access, Issue, Risk and Change buttons to contract or supplier module tables
 if(module == 'contract' || module == 'supplier'){
@@ -275,25 +298,34 @@ var selectedDataTable = new Tabulator("#SelectedDataTable",{
     addRowPos:"top",layout:"fitColumns"
     });
 // Create the Tables - The table showing the dialogue
-var DialogData=[]
+var DialogData = $.ajax({
+    type: "POST", dataType: "json", contentType: "application/json", async: false,
+    url: "/getbasedata",
+    data: JSON.stringify({module:'dialog',userid:userid,cid:cid,sid:sid,status:""}),
+    success: function(results) {return results;},
+    error: function(err) {console.log(err);}
+    }).responseJSON;
 var DialogDataTable = new Tabulator("#DialogDataTable",{
-    data:DialogData,
-    columns:[{title:"Type",field:"module",width:100, formatter:"link",
-                formatterParams:{urlPrefix:module+"/"+id+"/",urlField:id}},
+    data:DialogData, addRowPos:"top",layout:"fitColumns",
+    columns:[{title:"Type",field:"module",width:100,
+                formatter:"link", cellClick:function(e, cell){
+                    alert("/"+cell.getRow().getData().module+
+                        "/contractid/"+cell.getRow().getData().contractid+
+                        "/"+cell.getRow().getData().issueid)}},
             {title:"Comments",field:"comments",width:700},
             {title:"upduserid",field:"upduserid",width:150},
-            {title:"createdt",field:"createdt",width:150,formatter:"datetime", formatterParams:{
-                outputFormat:"DD/MM/YY HH:MM",invalidPlaceholder:"(invalid date)"},},
+            {title:"createdt",field:"createdt",width:150,formatter:"datetime",
+                    formatterParams:{outputFormat:"DD/MM/YY HH:MM",invalidPlaceholder:"(invalid date)"}},
             {title:"status",field:"status",width:100,formatter:function(cell, formatterParams){
                 var value = cell.getValue();
                 if(value == "Attention"){return "<span style='color:red;'>" + value + "</span>";}
                 else if (value == "Warning"){return "<span style='color:orange;'>" + value + "</span>";}
-                else {return "<span style='color:green;'>" + value + "</span>";}}
-            },
-            {formatter:Replybtn, width:80, hozAlign:"center",
-                cellClick:function(e, cell){window.location.href ="/dialog/contractid/"+cell.getRow().getData()}
-            }],
-            addRowPos:"top",layout:"fitColumns"
+                else {return "<span style='color:green;'>" + value + "</span>";}}}
+            ],
+            rowClick:function(e, row){
+                var selectedData = table.getSelectedData()[0];
+                dialogmodal.style.display = "block";
+                }
             });
 // Get the Data for the main Table (this calls a function which calls a database stored procedure)
 // The only data returned is the data which the user is authorised to see
@@ -304,6 +336,7 @@ var TableData = $.ajax({
     success: function(results) {return results;},
     error: function(err) {console.log(err);}
     }).responseJSON;
+console.log("==="+JSON.stringify(TableData))
 // Create the Tables - finally the table showing the data
 var table = new Tabulator("#table", {
         data:TableData,selectable:1,
@@ -325,7 +358,7 @@ var table = new Tabulator("#table", {
             var DialogData = $.ajax({
                 type: "POST", dataType: "json", contentType: "application/json", async: false,
                 url: "/getbasedata",
-                data: JSON.stringify({module:'dialog',userid:userid,cid:cid,sid:"",status:""}),
+                data: JSON.stringify({module:'dialog',userid:userid,cid:cid,sid:sid,status:""}),
                 success: function(results) {return results;},
                 error: function(err) {console.log(err);}
                 }).responseJSON;
@@ -344,17 +377,19 @@ var table = new Tabulator("#table", {
 document.getElementById("DialogSubmit").onclick = function() {   
     Dialog={}
         Dialog.parentid = "0";
+        Dialog.module=module
         Dialog.contractid = table.getSelectedData()[0]['contractid'];
-        if (module=="clause") {Dialog.clauseid = table.getSelectedData()[0]['clauseid']} else {Dialog.clauseid =  "0"};
-        if (module=="issue") {Dialog.issueid = table.getSelectedData()[0]['issueid']} else {Dialog.issueid =  "0"};
-        if (module=="risk") {Dialog.riskid = table.getSelectedData()[0]['riskid']} else {Dialog.riskid =  "0"};
-        if (module=="change") {Dialog.changeid = table.getSelectedData()[0]['changeid']} else {Dialog.changeid =  "0"};
-        if (module=="supplier") {Dialog.supplierid = table.getSelectedData()[0]['supplierid']} else {Dialog.supplierid =  "0"};
+        Dialog.id = "0";
+        if (module=="clause") {Dialog.id = table.getSelectedData()[0]['clauseid']};
+        if (module=="issue") {Dialog.id = table.getSelectedData()[0]['issueid']};
+        if (module=="risk") {Dialog.id = table.getSelectedData()[0]['riskid']};
+        if (module=="change") {Dialog.id = table.getSelectedData()[0]['changeid']};
+        if (module=="supplier") {Dialog.id = table.getSelectedData()[0]['supplierid']};
         Dialog.comments=document.getElementById("DialogText").value
         Dialog.createdt=new Date().toISOString().slice(0, 19).replace('T', ' ');
         Dialog.upduserid=userid
         Dialog.status="Normal"
-        Dialog.module=module
+        Dialog.contractid=table.getSelectedData()[0]['contractid']
         DialogDataTable.addRow(Dialog, true);
         $.ajax({
             type: "POST", dataType: "json", contentType: "application/json",
@@ -421,21 +456,31 @@ document.getElementById("DelBtn").onclick = function() {
     modal.style.display = "none";
     }
 // Get the <span> element that closes the modal
-    var span = document.getElementsByClassName("close-btn")[0];
+var span = document.getElementsByClassName("close-btn")[0];
+var dspan = document.getElementsByClassName("dclose-btn")[0];
 
 // When the user clicks on <span> (x), close the modal
 span.onclick = function() {
     modal.style.display = "none";
 }
+// When the user clicks on <span> (x), close the modal
+dspan.onclick = function() {
+    dialogmodal.style.display = "none";
+    }
 // When the user clicks on the CANCEL button in the modal close the modal
 document.getElementById("CanBtn").onclick = function() {
     modal.style.display = "none";
     }
+// When the user clicks on the CANCEL button in the modal close the modal
+document.getElementById("dCanBtn").onclick = function() {
+    dialogmodal.style.display = "none";
+    }
 // When the user clicks anywhere outside of the modal, close it
 window.onclick = function(event) {
-    if (event.target == modal) {
-    modal.style.display = "none";
-    }
-} 
+    if (event.target == modal || event.target == dialogmodal ) {
+        modal.style.display = "none";
+        dialogmodal.style.display = "none";
+        }
+}
 </script>
 {% endblock %}

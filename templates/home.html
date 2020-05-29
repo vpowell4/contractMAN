@@ -71,7 +71,7 @@
         </div>
     </div>
     <div class="row" style="padding: 10px;">
-        <div id="dialog-table"></div>
+        <div id="DialogDataTable"></div>
     </div>
 </div>
 
@@ -79,6 +79,7 @@
 
     //dialog={{dialog|safe}}
 dialog=[]
+userid='{{userid}}'
 
 //next 12 months
 var theMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -128,16 +129,40 @@ new Chart(document.getElementById("contracts-pie-chart"), {type: 'doughnut',
           ]},
     options: {legend: { display: true }, title: {display: true,text: 'Contract Types'}}
     });
+// Reply button for dialogue
+    var Viewbtn = function(cell, formatterParams){
+        return '<button type="button" class="btn-warning">View</button>';};
 
-var table = new Tabulator("#dialog-table", {
-    data: dialog, 
-    persistentLayout: true, persistentSort: true, persistenceID:"{{module}}Perststance",
-    layout:"fitColumns",addRowPos:"top",
-    columns:[{title:'Contract',field:'contractid'},
-                {title:'Clause',field:'clauseid'},
-                {title:'Userid',field:'userid'},
-                {title:'Date/Time',field:'createdt'},
-                {title:'Comments',field:'comments'},]
-    });
+    var DialogData = $.ajax({
+        type: "POST", dataType: "json", contentType: "application/json", async: false,
+        url: "/getbasedata",
+        data: JSON.stringify({module:'dialog',userid:userid,cid:"",sid:"",status:""}),
+        success: function(results) {return results;},
+        error: function(err) {console.log(err);}
+        }).responseJSON;
+    var DialogDataTable = new Tabulator("#DialogDataTable",{
+        data:DialogData,
+        columns:[{title:"Type",field:"module",width:100,
+                    formatter:"link", cellClick:function(e, cell){
+                        alert("/"+cell.getRow().getData().module+
+                            "/contractid/"+cell.getRow().getData().contractid+
+                            "/"+cell.getRow().getData().issueid)}},
+                {title:"Comments",field:"comments",width:700},
+                {title:"upduserid",field:"upduserid",width:150},
+                {title:"createdt",field:"createdt",width:150,
+                    formatter:"datetime", formatterParams:{
+                        outputFormat:"DD/MM/YY HH:MM",invalidPlaceholder:"(invalid date)"},
+                    },
+                {title:"status",field:"status",width:100,formatter:function(cell, formatterParams){
+                    var value = cell.getValue();
+                    if(value == "Attention"){return "<span style='color:red;'>" + value + "</span>";}
+                    else if (value == "Warning"){return "<span style='color:orange;'>" + value + "</span>";}
+                    else {return "<span style='color:green;'>" + value + "</span>";}}
+                },
+                {formatter:Viewbtn, width:80, hozAlign:"center",
+                    cellClick:function(e, cell){window.location.href ="/dialog/contractid/"+cell.getRow().getData()}
+                }],
+                addRowPos:"top",layout:"fitColumns"
+                });
 </script>
 {% endblock %}
