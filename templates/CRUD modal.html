@@ -12,6 +12,7 @@
         <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
             <div class="card-body">
                 <button id="AddBtn">+Add</button>
+                <p></p>
                 <div id="table"></div>
             </div>
         </div>
@@ -41,15 +42,17 @@
                 </h5>
             </div>
             <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
-                <div class="input-group">
-                    <span class="input-group-text font-weight-bold">Enter comments here</span>
-                    <textarea id="DialogText" class="form-control" aria-label="With textarea"></textarea>
-                </div>
-                <div class="text-right">
-                    <button id="DialogSubmit" class="btn btn-outline-secondary" type="button">Submit</button>
-                </div>
-                <div class="card-body">
-                    <div id="DialogDataTable"></div>			
+                <div class="container" width="550">
+                    <div class="input-group" style="padding:10px">
+                        <span class="input-group-text font-weight-bold">Enter comments here</span>
+                        <textarea id="DialogText" class="form-control" aria-label="With textarea"></textarea>
+                    </div>
+                    <div class="text-right">
+                        <button id="DialogSubmit" class="btn btn-success" type="button">Submit</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="DialogDataTable"></div>			
+                    </div>
                 </div>
             </div>
         </div>
@@ -72,11 +75,11 @@
                         {% elif module=="clause" %}
                             {%set noview= ["contractid","clauseid","createdt","updatedt","upduserid"] %}
                         {% elif module=="issue" %}
-                            {%set noview= ["issueid","createdt","updatedt","upduserid"] %}
+                            {%set noview= ["contractid","clauseid","issueid","createdt","updatedt","upduserid"] %}
                         {% elif module=="risk" %}
-                            {%set noview= ["riskid","createdt","updatedt","upduserid"] %}
+                            {%set noview= ["contractid","clauseid","riskid","createdt","updatedt","upduserid"] %}
                         {% elif module=="change" %}
-                            {%set noview= ["changeid","createdt","updatedt","upduserid"] %}
+                            {%set noview= ["contractid","clauseid","changeid","createdt","updatedt","upduserid"] %}
                         {% elif module=="supplier" %}
                             {%set noview= ["supplierid","createdt","updatedt","upduserid"] %}
                         {% elif module=="access" %}
@@ -135,7 +138,7 @@
                             <option value="{{contsel['contractid']}}">{{contsel['title']}}</option>
                             {% endfor %}
                             </select>
-                            {% elif module=="Access" and item=="actorid" %}
+                            {% elif item=="actorid" %}
                             <select class="form-control" type="text" id="{{item}}">
                             {% for actorsel in actors%}
                             <option value="{{actorsel['actorid']}}">{{actorsel['email']}}</option>
@@ -222,7 +225,7 @@ switch (module) {
         noview = ['supplierid'];
         break;
     case 'access' :
-        noview = ['accessid'];
+        noview = ['accessid','contractid'];
         break;
     }
 // Create the table columns view make visable only columns needed, and add href
@@ -270,7 +273,7 @@ for (item in cols) {
 }
 
 // Add Access, Issue, Risk and Change buttons to contract or supplier module tables
-if(module == 'contract' || module == 'supplier'){
+if(module == 'contract'){
     var Accessbtn = function(cell, formatterParams){
         return '<button type="button" class="btn-warning">A </button>';};
     var Issuebtn = function(cell, formatterParams){
@@ -305,14 +308,13 @@ var DialogData = $.ajax({
     success: function(results) {return results;},
     error: function(err) {console.log(err);}
     }).responseJSON;
-var DialogDataTable = new Tabulator("#DialogDataTable",{
+
+    var DialogDataTable = new Tabulator("#DialogDataTable",{
     data:DialogData, addRowPos:"top",layout:"fitColumns",
-    columns:[{title:"Type",field:"module",width:100,
-                formatter:"link", cellClick:function(e, cell){
-                    alert("/"+cell.getRow().getData().module+
-                        "/contractid/"+cell.getRow().getData().contractid+
-                        "/"+cell.getRow().getData().issueid)}},
-            {title:"Comments",field:"comments",width:700},
+    columns:[{title:"Type",field:"module",width:100, cellClick:function(e, cell){
+                    window.location.assign("/"+cell.getRow().getData().module+
+                        "/contractid/"+cell.getRow().getData().contractid)}},
+            {title:"Comments",field:"comments",width:600},
             {title:"upduserid",field:"upduserid",width:150},
             {title:"createdt",field:"createdt",width:150,formatter:"datetime",
                     formatterParams:{outputFormat:"DD/MM/YY HH:MM",invalidPlaceholder:"(invalid date)"}},
@@ -376,30 +378,35 @@ var table = new Tabulator("#table", {
 
 // When user presses on submit button for dialog, record is added to dialog table
 document.getElementById("DialogSubmit").onclick = function() {   
+    if(table.getSelectedData().length == 0) {
+        alert("NO ROW SELECTED")
+        return
+    }
     Dialog={}
-        Dialog.parentid = "0";
-        Dialog.module=module
-        Dialog.contractid = table.getSelectedData()[0]['contractid'];
-        Dialog.id = "0";
-        if (module=="clause") {Dialog.id = table.getSelectedData()[0]['clauseid']};
-        if (module=="issue") {Dialog.id = table.getSelectedData()[0]['issueid']};
-        if (module=="risk") {Dialog.id = table.getSelectedData()[0]['riskid']};
-        if (module=="change") {Dialog.id = table.getSelectedData()[0]['changeid']};
-        if (module=="supplier") {Dialog.id = table.getSelectedData()[0]['supplierid']};
-        Dialog.comments=document.getElementById("DialogText").value
-        Dialog.createdt=new Date().toISOString().slice(0, 19).replace('T', ' ');
-        Dialog.upduserid=userid
-        Dialog.status="Normal"
-        Dialog.contractid=table.getSelectedData()[0]['contractid']
-        DialogDataTable.addRow(Dialog, true);
-        $.ajax({
-            type: "POST", dataType: "json", contentType: "application/json",
-            url: "/dialog/insert",
-            data: JSON.stringify(Dialog),
-            success: function(response) {console.log(response);},
-            error: function(err) {console.log(err);}
+    Dialog.parentid = "0";
+    Dialog.module=module
+    Dialog.contractid = table.getSelectedData().contractid;
+    Dialog.id = "0";
+    if(table.getSelectedData().length > 0) { 
+        if (module=="clause") {Dialog.id = table.getSelectedData()[0].clauseid};
+        if (module=="issue") {Dialog.id = table.getSelectedData()[0].issueid};
+        if (module=="risk") {Dialog.id = table.getSelectedData()[0].riskid};
+        if (module=="change") {Dialog.id = table.getSelectedData()[0].changeid};
+        if (module=="supplier") {Dialog.id = table.getSelectedData()[0].supplierid};
+        }
+    Dialog.comments=document.getElementById("DialogText").value
+    Dialog.createdt=new Date().toISOString().slice(0, 19).replace('T', ' ');
+    Dialog.upduserid=userid
+    Dialog.status="Normal"
+    DialogDataTable.addRow(Dialog, true);
+    $.ajax({
+        type: "POST", dataType: "json", contentType: "application/json",
+        url: "/dialog/insert",
+        data: JSON.stringify(Dialog),
+        success: function(response) {console.log(response);},
+        error: function(err) {console.log(err);}
         });
-        } 
+    } 
 
 // Get the modal
 var modal = document.getElementById("AddModal");

@@ -12,13 +12,23 @@ def table_data(sql,type):
     database = "contractmanager"
     cnxn = pyodbc.connect("Driver={SQL Server Native Client 11.0};Server="+server+
                             ";Database="+database+";Trusted_Connection=yes;")
+    cnxn.timeout = 60  
     cursor = cnxn.cursor() 
     if (type=="one") :
-        data=cursor.execute(sql).fetchone()
-    elif (type=="all") :
-        data=cursor.execute(sql).fetchall()
-    else :
-        data=cursor.execute(sql)
+        try:
+            data=cursor.execute(sql).fetchone()
+        except Exception as e:
+            print("==>",e)
+    elif (type=="all") : 
+        try:
+            data=cursor.execute(sql).fetchall()
+        except Exception as e:
+            print("==>",e)
+    else : 
+        try:
+            data=cursor.execute(sql)
+        except Exception as e:
+            print("==>",e)
     cursor.commit()
     cursor.close()
     return data
@@ -139,6 +149,12 @@ def home():
 @app.route("/about")
 def about():
     return render_template("about.html")
+
+@app.route("/assessments")
+@login_required
+def assessments():
+    return render_template("assessments.html")
+
 
 @app.route("/contracts")
 @login_required
@@ -317,8 +333,6 @@ def accessupsert():
 @app.route('/dialog/insert', methods=['POST'])
 @login_required
 def dialoginsert():
-    module=request.args.get('module')
-    print("module ===> "+module)
     data = request.get_json()
     result = table_data("EXECUTE DIALOGS_INSERT @JSONINFO='"+json.dumps(data)+"'","exe")
     return data
