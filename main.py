@@ -52,8 +52,7 @@ def getbasedata():
             elif (content["sid"]!="" ):
                 execstring=execstring+" AND supplierid='"+str(content["sid"])+"'"
         data=table_data("SELECT CAST(("+execstring+" FOR JSON PATH) AS VARCHAR(MAX))","one")
-        if (data==None):
-            data[0]=""
+        if (data==None): data[0]=""
         return data[0]
 
 login_manager = LoginManager()
@@ -223,9 +222,9 @@ def actors():
     return render_template("actors.html",columns=columns,id="email",userid=session['current_user'])
 
 @app.route("/contractid")
-def contractview():
+def contractview(): 
     cid=request.args.get('id','')
-    module=request.args.get('action','contract')
+    module=request.args.get('module','contract')
     columns=table_meta(table=module+"s",type="columns")
     if (module=="access") :
         actors=table_data("SELECT actorid, email FROM Actors FOR JSON PATH","one")
@@ -238,4 +237,4 @@ def contractview():
                 contract=contract,id=module+"id", userid=session['current_user'])
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=False)    

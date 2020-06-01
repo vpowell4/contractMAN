@@ -257,36 +257,20 @@ for (item in cols) {
         else if(["createdt","updatedt"].includes(cols[item]) == true) {
             colsview.push({title:cols[item],field:cols[item],
                 formatter:"datetime", formatterParams:{
-                    outputFormat:"DD/MM/YY HH:MM",
-                    invalidPlaceholder:"(invalid date)"},
+                    outputFormat:"DD/MM/YY HH:MM",invalidPlaceholder:"(invalid date)"},
                 visible:visible})         
             }
     else {
-        colsview.push({title:cols[item],field:cols[item],
-            visible:visible})
+        colsview.push({title:cols[item],field:cols[item],visible:visible})
     }
 }
 
-// Add Access, Issue, Risk and Change buttons to contract or supplier module tables
+// Add Access, Issue, Risk and Change pulldown to contract or supplier module tables
 if(module == 'contract'){
-    var Accessbtn = function(cell, formatterParams){
-        return '<button type="button" class="btn-warning">A </button>';};
-    var Issuebtn = function(cell, formatterParams){
-        return '<button type="button" class="btn-warning">I </button>';};
-    var Riskbtn = function(cell, formatterParams){
-        return '<button type="button" class="btn-warning">R</button>';};
-    var Changebtn = function(cell, formatterParams){
-        return '<button type="button" class="btn-warning">C</button>';};
-    if(module == 'contract') {
-        colsview.unshift({formatter:Riskbtn, width:10, hozAlign:"center",
-            cellClick:function(e, cell){window.location.href ="/risk/contractid/"+cell.getRow().getData().contractid}})
-        colsview.unshift({formatter:Changebtn, width:10, hozAlign:"center",
-            cellClick:function(e, cell){window.location.href ="/change/contractid/"+cell.getRow().getData().contractid}})
-        colsview.unshift({formatter:Issuebtn, width:10, hozAlign:"center",
-            cellClick:function(e, cell){window.location.href ="/issue/contractid/"+cell.getRow().getData().contractid}})
-        colsview.unshift({formatter:Accessbtn, width:10, hozAlign:"center",
-            cellClick:function(e, cell){window.location.href ="/access/contractid/"+cell.getRow().getData().contractid}})
-        }
+    colsview.unshift({title:"Actions",field:"actions",editor:"select",
+        cellEdited:function(data){console.log(data.getValue())},
+        editorParams:{values:{"Issue":"Issue","Risk":"Risk","Change":"Change","Access":"Access"}},   
+        })
     }
 // console.log(JSON.stringify(colsview, null, 4));
 // Create the Tables - The table showing the selected row of data
@@ -317,7 +301,10 @@ var table = new Tabulator("#table", {
         columns:colsview,
 // When the SINGLE user clicks on a row in the table, update the row table
 // and change the dialog box to show only records for that contract
-        rowClick:function(e, row){
+    cellEdited:function(data){
+        window.location.assign('/contractid?module='+data.getValue()+'&id='+data.getData().contractid)
+        },        
+    rowClick:function(e, row){
             row.select();
             var selectedData = table.getSelectedData()[0];
             selectedDataTable.clearData();
