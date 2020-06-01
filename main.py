@@ -121,6 +121,17 @@ def logout():
 def unauthorized_handler():
     return render_template("login.html")
 
+@app.route('/register', methods=['GET','POST'])
+def register():
+    if request.method == 'GET':
+            return render_template("register.html")
+    email = request.form['email']
+    userid = request.form['userid']
+    password = request.form['password']
+    data={'userid':userid,'password':password,'email':email}
+    result = table_data("EXECUTE REGISTER_INSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    return render_template("register.html")
+
 def table_meta(table,type):
     if (type=="columns") :
         cols=table_data("SELECT name FROM sys.columns WHERE object_id = OBJECT_ID('dbo."+table+"')","all")
@@ -136,15 +147,27 @@ def home():
     stats = table_data("EXECUTE DASHBOARD_STATS02 @CURRENT_USER='"+session['current_user']+"'","all")
     i=[]; r=[]; c=[]; s=[];  t=[]
     for row in stats:
-        i.append(row[0]);
-        r.append(row[1]);
-        c.append(row[2]);
-        s.append(row[3]);
-        t.append(row[4]);
+        i.append(row[0]); r.append(row[1]); c.append(row[2]); s.append(row[3]); t.append(row[4]);
     results=table_data("EXECUTE DASHBOARD_STATS  @CURRENT_USER='"+session['current_user']+"'","all")
     return render_template("home.html",contracts=results[1][3],attention=results[1][1], warning=results[1][2],
         issues=results[2][3],risks=results[3][3],changes=results[0][3],userid=session['current_user'],
         stats={'issues':i,'risks':r,'changes':c,'suppliers':s,'contracts':t})
+
+@app.route('/deletedata', methods=['POST'])
+@login_required
+def deletedata():    
+    data = request.get_json()
+    result = table_data("EXECUTE "+data['module']+"S_DELETE @"+data['module']+"ID='"+data['id']+"'","exe")
+    return data
+
+@app.route('/upsertdata', methods=['POST'])
+@login_required
+def upsertdata():
+    data = request.get_json()
+    if (request.args.get('action', '')=="dialog") : cmodule="dialog";
+    else : cmodule=data['module']
+    result = table_data("EXECUTE "+cmodule+"S_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    return data
 
 @app.route("/about")
 def about():
@@ -155,7 +178,6 @@ def about():
 def assessments():
     return render_template("assessments.html")
 
-
 @app.route("/contracts")
 @login_required
 def contracts():
@@ -163,30 +185,6 @@ def contracts():
     columns=table_meta(table="Contracts",type="columns")
     return render_template("contracts.html",columns=columns,status=status,
                 sid="",cid="", id="contractid",userid=session['current_user'])
-
-@app.route('/contract/upsert', methods=['POST'])
-@login_required
-def contractupsert():
-    data = request.get_json()
-    result = table_data("EXECUTE CONTRACTS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    return data
-
-@app.route('/contract/delete', methods=['POST'])
-@login_required
-def contractdelete():    
-    data = request.get_json()
-    result = table_data("EXECUTE CONTRACTS_DELETE @CONTRACTID='"+data+"'","exe")
-    return data
-
-@app.route("/contract/contractid/<cid>")
-@login_required
-def clause(cid=id):
-    # Get the basic contract information
-    contract=table_data("SELECT * FROM Contracts WHERE contractid='"+cid+"'FOR JSON PATH","one")
-    columns=table_meta(table="Clauses",type="columns")
-    return render_template("contract.html",columns=columns,status="",cid=cid,sid="",
-                            contract=contract[0],id="contractid",userid=session['current_user'])
-
 
 @app.route("/issues")
 @login_required
@@ -196,27 +194,6 @@ def issues():
     return render_template("issues.html",columns=columns,id="issueid",cid="",
             contracts=json.loads(contracts[0]),userid=session['current_user'])
 
-@app.route("/issue/contractid/<cid>")
-@login_required
-def issuesbyconttact(cid=id):
-    columns=table_meta(table="Issues",type="columns")
-    return render_template("issues.html",columns=columns,
-            status="",cid=cid,sid="",id="issueid",userid=session['current_user'])
-
-@app.route('/issue/upsert', methods=['POST'])
-@login_required
-def issueupsert():
-    data = request.get_json()
-    result = table_data("EXECUTE ISSUES_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    return data
-
-@app.route('/issue/delete', methods=['POST'])
-@login_required
-def issuedelete():    
-    data = request.get_json()
-    result = table_data("EXECUTE ISSUES_DELETE @ISSUEID='"+data+"'","exe")
-    return data
-
 @app.route("/risks")
 @login_required
 def contractrisks():
@@ -224,26 +201,6 @@ def contractrisks():
     columns=table_meta(table="Risks",type="columns")
     return render_template("risks.html",columns=columns,id="riskid",
             contracts=json.loads(contracts[0]),userid=session['current_user'])
-
-@app.route("/risk/contractid/<cid>")
-@login_required
-def risksbyconttact(cid=id):
-    columns=table_meta(table="Risks",type="columns")
-    return render_template("Risks.html",columns=columns,status="",cid=cid,sid="",id="riskid",userid=session['current_user'])
-
-@app.route('/risk/upsert', methods=['POST'])
-@login_required
-def riskupsert():
-    data = request.get_json()
-    result = table_data("EXECUTE RISKS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    return data
-
-@app.route('/risk/delete', methods=['POST'])
-@login_required
-def riskdelete():    
-    data = request.get_json()
-    result = table_data("EXECUTE RISKS_DELETE @RISKID='"+data+"'","exe")
-    return data
 
 @app.route("/changes")
 @login_required
@@ -253,47 +210,11 @@ def contractchanges():
     return render_template("changes.html",columns=columns,id="changeid",cid="",
              contracts=json.loads(contracts[0]),userid=session['current_user'])    
 
-@app.route("/change/contractid/<cid>")
-@login_required
-def changesbyconttact(cid=id):
-    columns=table_meta(table="Changes",type="columns")
-    return render_template("Changes.html",columns=columns,status="",
-            cid=cid,sid="",id="changeid",userid=session['current_user'])
-
-@app.route('/change/upsert', methods=['POST'])
-@login_required
-def changeupsert():
-    data = request.get_json()
-    result = table_data("EXECUTE CHANGES_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    return data
-
-@app.route('/change/delete', methods=['POST'])
-@login_required
-def changedelete():    
-    data = request.get_json()
-    result = table_data("EXECUTE CHANGES_DELETE @CHANGEID='"+data+"'","exe")
-    return data
-
-
 @app.route("/suppliers")
 @login_required
 def suppliers():
     columns=table_meta(table="Suppliers",type="columns")
     return render_template("suppliers.html",columns=columns,id="supplierid",userid=session['current_user'])
-
-@app.route('/supplier/upsert', methods=['POST'])
-@login_required
-def supplierupsert():
-    data = request.get_json()
-    result = table_data("EXECUTE SUPPLIERS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    return data
-
-@app.route('/supplier/delete', methods=['POST'])
-@login_required
-def supplierdelete():
-    data = request.get_json()
-    result = table_data("EXECUTE SUPPLIERS_DELETE @SUPPLIERID='"+data+"'","exe")
-    return data
 
 @app.route("/actors")
 @login_required
@@ -301,52 +222,20 @@ def actors():
     columns=table_meta(table="Actors",type="columns")
     return render_template("actors.html",columns=columns,id="email",userid=session['current_user'])
 
-@app.route('/actor/upsert', methods=['POST'])
-@login_required
-def actorupsert():
-    data = request.get_json()
-    result = table_data("EXECUTE ACTORS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    return data
-
-@app.route('/actor/delete', methods=['POST'])
-@login_required
-def actordelete():    
-    data = request.get_json()
-    result = table_data("EXECUTE ACTORS_DELETE @EMAIL='"+data+"'","exe")
-    return data
-
-@app.route("/access/contractid/<cid>")
-@login_required
-def accessbycontract(cid=id):
-    columns=table_meta(table="Accesss",type="columns")
-    actors=table_data("SELECT actorid, email FROM Actors FOR JSON PATH","one")
-    return render_template("accesss.html",columns=columns,actors=json.loads(actors[0]),
+@app.route("/contractid")
+def contractview():
+    cid=request.args.get('id','')
+    module=request.args.get('action','contract')
+    columns=table_meta(table=module+"s",type="columns")
+    if (module=="access") :
+        actors=table_data("SELECT actorid, email FROM Actors FOR JSON PATH","one")
+        return render_template("accesss.html",columns=columns,actors=json.loads(actors[0]),
                 cid=cid,userid=session['current_user'])
-
-@app.route('/access/upsert', methods=['POST'])
-@login_required
-def accessupsert():
-    data = request.get_json()
-    result = table_data("EXECUTE ACCESSS_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    return data
-
-@app.route('/dialog/insert', methods=['POST'])
-@login_required
-def dialoginsert():
-    data = request.get_json()
-    result = table_data("EXECUTE DIALOGS_INSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    return data
-
-@app.route('/register', methods=['GET','POST'])
-def register():
-    if request.method == 'GET':
-            return render_template("register.html")
-    email = request.form['email']
-    userid = request.form['userid']
-    password = request.form['password']
-    data={'userid':userid,'password':password,'email':email}
-    result = table_data("EXECUTE REGISTER_INSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    return render_template("register.html")
+    contract=table_data("SELECT * FROM Contracts WHERE contractid='"+cid+"'FOR JSON PATH","one")
+    if (contract==None) : contract=""
+    else : contract=contract[0]
+    return render_template(module+"s.html", columns=columns, status="", cid=cid, sid="",
+                contract=contract,id=module+"id", userid=session['current_user'])
 
 if __name__ == "__main__":
     app.run(debug=False)

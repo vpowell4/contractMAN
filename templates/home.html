@@ -185,34 +185,10 @@ new Chart(document.getElementById("contracts-pie-chart"), {type: 'doughnut',
     options: {legend: { display: true }, title: {display: true,text: 'Contract Types'}}
     });
 
-var DialogData = $.ajax({
-    type: "POST", dataType: "json", contentType: "application/json", async: false,
-    url: "/getbasedata",
-    data: JSON.stringify({module:'dialog',userid:userid,cid:"",sid:"",status:""}),
-    success: function(results) {return results;},
-    error: function(err) {console.log(err);}
-    }).responseJSON;
-var DialogDataTable = new Tabulator("#DialogDataTable",{
-    data:DialogData, addRowPos:"top",layout:"fitColumns",
-    columns:[{title:"Type",field:"module",width:100,
-                formatter:"link", cellClick:function(e, cell){
-                    alert("/"+cell.getRow().getData().module+
-                        "/contractid/"+cell.getRow().getData().contractid+
-                        "/"+cell.getRow().getData().issueid)}},
-            {title:"Comments",field:"comments",width:600},
-            {title:"upduserid",field:"upduserid",width:150},
-            {title:"createdt",field:"createdt",width:150,formatter:"datetime",
-                    formatterParams:{outputFormat:"DD/MM/YY HH:MM",invalidPlaceholder:"(invalid date)"}},
-            {title:"status",field:"status",width:100,formatter:function(cell, formatterParams){
-                var value = cell.getValue();
-                if(value == "Attention"){return "<span style='color:red;'>" + value + "</span>";}
-                else if (value == "Warning"){return "<span style='color:orange;'>" + value + "</span>";}
-                else {return "<span style='color:green;'>" + value + "</span>";}}}
-            ],
-    rowClick:function(e, row){
-        dialogmodal.style.display = "block";
-        }
-    });
+var cid=""
+var sid=""
+// Create the Tables - The table showing the dialogue
+{% include "CRUDdialogtable.js" %}
 // Get the <span> element that closes the modal
      var dspan = document.getElementsByClassName("dclose-btn")[0];
     

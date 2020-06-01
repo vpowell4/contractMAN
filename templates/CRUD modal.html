@@ -247,11 +247,6 @@ for (item in cols) {
                      return "<span style='color:green;'>" + value + "</span>";
                  }
              },visible:visible})
-    else if(cols[item] == "title") {
-        colsview.push({title:cols[item],field:cols[item],
-            formatter:"link",formatterParams:{urlPrefix:module+"/"+id+"/",urlField:id},
-            visible:visible})
-         } 
     else if(["startdate","enddate","duedate"].includes(cols[item]) == true) {
         colsview.push({title:cols[item],field:cols[item],
             formatter:"datetime", formatterParams:{
@@ -301,34 +296,7 @@ var selectedDataTable = new Tabulator("#SelectedDataTable",{
     addRowPos:"top",layout:"fitColumns"
     });
 // Create the Tables - The table showing the dialogue
-var DialogData = $.ajax({
-    type: "POST", dataType: "json", contentType: "application/json", async: false,
-    url: "/getbasedata",
-    data: JSON.stringify({module:'dialog',userid:userid,cid:cid,sid:sid,status:""}),
-    success: function(results) {return results;},
-    error: function(err) {console.log(err);}
-    }).responseJSON;
-
-    var DialogDataTable = new Tabulator("#DialogDataTable",{
-    data:DialogData, addRowPos:"top",layout:"fitColumns",
-    columns:[{title:"Type",field:"module",width:100, cellClick:function(e, cell){
-                    window.location.assign("/"+cell.getRow().getData().module+
-                        "/contractid/"+cell.getRow().getData().contractid)}},
-            {title:"Comments",field:"comments",width:600},
-            {title:"upduserid",field:"upduserid",width:150},
-            {title:"createdt",field:"createdt",width:150,formatter:"datetime",
-                    formatterParams:{outputFormat:"DD/MM/YY HH:MM",invalidPlaceholder:"(invalid date)"}},
-            {title:"status",field:"status",width:100,formatter:function(cell, formatterParams){
-                var value = cell.getValue();
-                if(value == "Attention"){return "<span style='color:red;'>" + value + "</span>";}
-                else if (value == "Warning"){return "<span style='color:orange;'>" + value + "</span>";}
-                else {return "<span style='color:green;'>" + value + "</span>";}}}
-            ],
-            rowClick:function(e, row){
-                var selectedData = table.getSelectedData()[0];
-                dialogmodal.style.display = "block";
-                }
-            });
+{% include "CRUDdialogtable.js" %}
 // Get the Data for the main Table (this calls a function which calls a database stored procedure)
 // The only data returned is the data which the user is authorised to see
 var TableData = $.ajax({
@@ -385,7 +353,7 @@ document.getElementById("DialogSubmit").onclick = function() {
     Dialog={}
     Dialog.parentid = "0";
     Dialog.module=module
-    Dialog.contractid = table.getSelectedData().contractid;
+    Dialog.contractid = table.getSelectedData()[0].contractid;
     Dialog.id = "0";
     if(table.getSelectedData().length > 0) { 
         if (module=="clause") {Dialog.id = table.getSelectedData()[0].clauseid};
@@ -399,9 +367,9 @@ document.getElementById("DialogSubmit").onclick = function() {
     Dialog.upduserid=userid
     Dialog.status="Normal"
     DialogDataTable.addRow(Dialog, true);
-    $.ajax({
+    $.ajax({    
         type: "POST", dataType: "json", contentType: "application/json",
-        url: "/dialog/insert",
+        url: "/upsertdata?action=dialog",
         data: JSON.stringify(Dialog),
         success: function(response) {console.log(response);},
         error: function(err) {console.log(err);}
@@ -426,6 +394,7 @@ document.getElementById("AddBtn").onclick = function() {
 //Flask passess and UPSERT to the database, the table is also updated on the screen
 document.getElementById("SubBtn").onclick = function() {
     dd={}
+    dd.module=module
     for(item in cols){
         dd[cols[item]]=document.getElementById(cols[item]).value
         }
@@ -441,7 +410,7 @@ document.getElementById("SubBtn").onclick = function() {
     dd.upduserid = userid;
     $.ajax({
         type: "POST", dataType: "json", contentType: "application/json",
-        url: "/"+module+"/upsert",
+        url: "/upsertdata",
         data: JSON.stringify(dd),
         success: function(response) {console.log(response);},
         error: function(err) {console.log(err);}
@@ -453,10 +422,14 @@ document.getElementById("SubBtn").onclick = function() {
 document.getElementById("DelBtn").onclick = function() {
     var r = confirm("Confirm Delete !");
         if (r==true) {
+            dd={}
+            dd.module=module
+            dd.id=document.getElementById("{{id}}").value
+            dd.userid=userid
             $.ajax({
                 type: "POST", dataType: "json", contentType: "application/json",
-                url: "/"+module+"/delete",
-                data: JSON.stringify(document.getElementById("{{id}}").value),
+                url: "/deletedata",
+                data: JSON.stringify(dd),
                 success: function(response) {console.log(response);},
                 error: function(err) {console.log(err);}
                 });
