@@ -9,21 +9,21 @@
         {% if session['logged_in'] %}
         <li class="nav-item active">
           <li class="nav-item">
-            <a class="nav-link" href="/contracts">Contracts</a>
+            <a class="nav-link" href="/views?action=contract">Contracts</a>
           </li> 
           <li>
-            <a class="nav-link" href="/suppliers">Suppliers</a>
+            <a class="nav-link" href="/views?action=supplier">Suppliers</a>
           </li>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="/assessments" id="navbardrop" data-toggle="dropdown">Activities</a>
+          <a class="nav-link dropdown-toggle" href="/views?action=assessment" id="navbardrop" data-toggle="dropdown">Activities</a>
           <div class="dropdown-menu">
-              <a class="dropdown-item" href="/assessments">Assessments</a>
+              <a class="dropdown-item" href="/views?action=assessment">Assessments</a>
               <div class="dropdown-divider"></div>
-              <a class="dropdown-item" href="/issues">Issues</a>
-              <a class="dropdown-item" href="/risks">Risks</a>
-              <a class="dropdown-item" href="/changes">Changes</a>
+              <a class="dropdown-item" href="/views?action=issue">Issues</a>
+              <a class="dropdown-item" href="/views?action=risk">Risks</a>
+              <a class="dropdown-item" href="/views?action=change">Changes</a>
               <div class="dropdown-divider"></div>
-              <a class="dropdown-item" href="/actors">Actors</a>
+              <a class="dropdown-item" href="/views?action=actor">Actors</a>
           </div>   
         </li>
         <li class="nav-item">

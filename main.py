@@ -152,74 +152,21 @@ def home():
         issues=results[2][3],risks=results[3][3],changes=results[0][3],userid=session['current_user'],
         stats={'issues':i,'risks':r,'changes':c,'suppliers':s,'contracts':t})
 
-@app.route('/deletedata', methods=['POST'])
-@login_required
-def deletedata():    
-    data = request.get_json()
-    result = table_data("EXECUTE "+data['module']+"S_DELETE @"+data['module']+"ID='"+data['id']+"'","exe")
-    return data
-
-@app.route('/upsertdata', methods=['POST'])
-@login_required
-def upsertdata():
-    data = request.get_json()
-    if (request.args.get('action', '')=="dialog") : cmodule="dialog";
-    else : cmodule=data['module']
-    result = table_data("EXECUTE "+cmodule+"S_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
-    return data
-
 @app.route("/about")
 def about():
     return render_template("about.html")
 
-@app.route("/assessments")
-@login_required
-def assessments():
-    return render_template("assessments.html")
-
-@app.route("/contracts")
-@login_required
-def contracts():
-    status=request.args.get('action', '')
-    columns=table_meta(table="Contracts",type="columns")
-    return render_template("contracts.html",columns=columns,status=status,
-                sid="",cid="", id="contractid",userid=session['current_user'])
-
-@app.route("/issues")
+@app.route("/views")
 @login_required
 def issues():
     contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
-    columns=table_meta(table="Issues",type="columns")
-    return render_template("issues.html",columns=columns,id="issueid",cid="",
-            contracts=json.loads(contracts[0]),userid=session['current_user'])
-
-@app.route("/risks")
-@login_required
-def contractrisks():
-    contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
-    columns=table_meta(table="Risks",type="columns")
-    return render_template("risks.html",columns=columns,id="riskid",
-            contracts=json.loads(contracts[0]),userid=session['current_user'])
-
-@app.route("/changes")
-@login_required
-def contractchanges():
-    contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
-    columns=table_meta(table="Changes",type="columns")
-    return render_template("changes.html",columns=columns,id="changeid",cid="",
-             contracts=json.loads(contracts[0]),userid=session['current_user'])    
-
-@app.route("/suppliers")
-@login_required
-def suppliers():
-    columns=table_meta(table="Suppliers",type="columns")
-    return render_template("suppliers.html",columns=columns,id="supplierid",userid=session['current_user'])
-
-@app.route("/actors")
-@login_required
-def actors():
-    columns=table_meta(table="Actors",type="columns")
-    return render_template("actors.html",columns=columns,id="email",userid=session['current_user'])
+    status=request.args.get('status', '')
+    module=request.args.get('action', '')
+    columns=table_meta(table=module+"s",type="columns")
+    if (module=="actor") : mid="email"
+    else : mid=module+"id"
+    return render_template("views.html",columns=columns,id=mid,cid="",status=status,module=module,
+        contracts=json.loads(contracts[0]),userid=session['current_user'])
 
 @app.route("/contractid")
 def contractview(): 
@@ -235,6 +182,22 @@ def contractview():
     else : contract=contract[0]
     return render_template(module+"s.html", columns=columns, status="", cid=cid, sid="",
                 contract=contract,id=module+"id", userid=session['current_user'])
+
+@app.route('/deletedata', methods=['POST'])
+@login_required
+def deletedata():    
+    data = request.get_json()
+    result = table_data("EXECUTE "+data['module']+"S_DELETE @"+data['module']+"ID='"+data['id']+"'","exe")
+    return data
+
+@app.route('/upsertdata', methods=['POST'])
+@login_required
+def upsertdata():
+    data = request.get_json()
+    if (request.args.get('action', '')=="dialog") : cmodule="dialog";
+    else : cmodule=data['module']
+    result = table_data("EXECUTE "+cmodule+"S_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    return data
 
 if __name__ == "__main__":
     app.run(debug=False)    
