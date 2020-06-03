@@ -58,6 +58,25 @@
         </div>
 </div>
 <!-- The Modal -->
+{% if module=="actor" %}
+    {%set noview= ["actorid","createdt","updatedt","upduserid"] %}
+{% elif module=="contract" %}
+    {%set noview= ["contractid","contractdoc","createdt","updatedt","upduserid"] %}
+{% elif module=="clause" %}
+    {%set noview= ["contractid","clauseid","createdt","updatedt","upduserid"] %}
+{% elif module=="issue" %}
+    {%set noview= ["contractid","clauseid","issueid","createdt","updatedt","upduserid"] %}
+{% elif module=="risk" %}
+    {%set noview= ["contractid","clauseid","riskid","createdt","updatedt","upduserid"] %}
+{% elif module=="change" %}
+    {%set noview= ["contractid","clauseid","changeid","createdt","updatedt","upduserid"] %}
+{% elif module=="supplier" %}
+    {%set noview= ["supplierid","createdt","updatedt","upduserid"] %}
+{% elif module=="access" %}
+    {%set noview= ["accessid","contractid","createdt","updatedt","upduserid"] %}
+{% else %}
+    {%set noview= ["createdt","updatedt","upduserid"] %}
+{% endif %}
 <div id="AddModal" class="modal"style="overflow-y:auto;">
 	<div class="modal-dialog" >
 		<div class="modal-content">
@@ -68,25 +87,6 @@
 			<div class="modal-body">
                 <div class="container">
 					<form>
-                        {% if module=="actor" %}
-                            {%set noview= ["actorid","createdt","updatedt","upduserid"] %}
-                        {% elif module=="contract" %}
-                            {%set noview= ["contractid","contractdoc","createdt","updatedt","upduserid"] %}
-                        {% elif module=="clause" %}
-                            {%set noview= ["contractid","clauseid","createdt","updatedt","upduserid"] %}
-                        {% elif module=="issue" %}
-                            {%set noview= ["contractid","clauseid","issueid","createdt","updatedt","upduserid"] %}
-                        {% elif module=="risk" %}
-                            {%set noview= ["contractid","clauseid","riskid","createdt","updatedt","upduserid"] %}
-                        {% elif module=="change" %}
-                            {%set noview= ["contractid","clauseid","changeid","createdt","updatedt","upduserid"] %}
-                        {% elif module=="supplier" %}
-                            {%set noview= ["supplierid","createdt","updatedt","upduserid"] %}
-                        {% elif module=="access" %}
-                            {%set noview= ["accessid","contractid","createdt","updatedt","upduserid"] %}
-                        {% else %}
-                            {%set noview= ["createdt","updatedt","upduserid"] %}
-                        {% endif %}
                         {% for item in columns if not item in noview %} 
                         <div class="form-group">
                             <label for="{{item}}">{{item}}:</label>
@@ -100,29 +100,34 @@
                                 <option>Risks</option>
                                 <option>Changes</option>
                             </select>
-                            {% elif item=="status" %}
+                            {% endif %}
+                            {% if item=="status" %}
                             <select class="form-control" type="text" id="{{item}}">
                                 <option>Normal</option>
                                 <option>Warning</option>
                                 <option>Attention</option>
                             </select>
-                            {% elif item in ["active"] %}
+                            {% endif %}
+                            {% if item in ["active"] %}
                             <select class="form-control" type="text" id="{{item}}">
                                 <option>Yes</option>
                                 <option>No</option>
                             </select>
-                            {% elif item in ["read","add","upd","del"] %}
+                            {% endif %}
+                            {% if item in ["read","add","upd","del"] %}
                             <select class="form-control" type="text" id="{{item}}">
                                 <option>True</option>
                                 <option>False</option>
                             </select>
-                            {% elif item in ["priority","impact"] %}
+                            {% endif %}
+                            {% if item in ["priority","impact"] %}
                             <select class="form-control" type="text" id="{{item}}">
                                 <option>High</option>
                                 <option>Medium</option>
                                 <option>Low</option>
                             </select>
-                            {% elif item=="adminlevel" %}
+                            {% endif %}
+                            {% if item=="adminlevel" %}
                             <select class="form-control" type="text" id="{{item}}">
                                 <option>Administrator</option>
                                 <option>Owner</option>
@@ -130,21 +135,25 @@
                                 <option>Reviewer</option>
                                 <option>Sys Admin</option>
                             </select>
-                            {% elif item=="contractid" and cid!="" %}
+                            {% endif %}
+                            {% if item=="contractid" and cid!="" %}
                             <input class="form-control" type="text" id="{{item}}">
-                            {% elif item=="contractid" and cid=="" %}
+                            {% endif %}
+                            {% if item=="contractid" and cid=="" %}
                             <select class="form-control" type="text" id="{{item}}">
                             {% for contsel in contracts%}
                             <option value="{{contsel['contractid']}}">{{contsel['title']}}</option>
                             {% endfor %}
                             </select>
-                            {% elif item=="actorid" %}
+                            {% endif %}
+                            {% if item=="actorid" %}
                             <select class="form-control" type="text" id="{{item}}">
                             {% for actorsel in actors%}
                             <option value="{{actorsel['actorid']}}">{{actorsel['email']}}</option>
                             {% endfor %}
                             </select>
-                            {% elif item in ["startdate","enddate","duedate","milestonedate"] %}
+                            {% endif %}
+                            {% if item in ["startdate","enddate","duedate","milestonedate"] %}
                             <input class="form-control" type="date" id="{{item}}">
                             {% else %}
                             <input class="form-control" type="text" id="{{item}}">
@@ -269,7 +278,7 @@ for (item in cols) {
 if(module == 'contract'){
     colsview.unshift({title:"Actions",field:"actions",editor:"select",
         cellEdited:function(data){console.log(data.getValue())},
-        editorParams:{values:{"Issue":"Issue","Risk":"Risk","Change":"Change","Access":"Access"}},   
+        editorParams:{values:{"issue":"issue","risk":"risk","change":"change","access":"access"}},   
         })
     }
 // console.log(JSON.stringify(colsview, null, 4));
@@ -277,7 +286,7 @@ if(module == 'contract'){
 var selectedData=[]
 var selectedDataTable = new Tabulator("#SelectedDataTable",{
     columns:[{title:"Description",field:"description"},{title:"Value",field:"value"}],
-    addRowPos:"top",layout:"fitColumns"
+    addRowPos:"top",layout:"fitColumns", placeholder:"Select row in records table above",
     });
 // Create the Tables - The table showing the dialogue
 {% include "CRUDdialogtable.js" %}
@@ -290,19 +299,22 @@ var TableData = $.ajax({
     success: function(results) {return results;},
     error: function(err) {console.log(err);}
     }).responseJSON;
-
+if (TableData==null) {
+    TableData=[]
+    }
 // Create the Tables - finally the table showing the data
 var table = new Tabulator("#table", {
-        data:TableData,selectable:1,
+        data:TableData,
+        selectable:1,layout:"fitColumns",addRowPos:"top",
         pagination:"local",paginationAddRow:"table",paginationSize:20,
         placeholder:"No Data Available",height:"70%",
         persistence:{sort:true,columns:true}, persistenceID:"Persistance".concat(userid),
-        layout:"fitColumns",addRowPos:"top",
         columns:colsview,
 // When the SINGLE user clicks on a row in the table, update the row table
 // and change the dialog box to show only records for that contract
     cellEdited:function(data){
-        window.location.assign('/contractid?module='+data.getValue()+'&id='+data.getData().contractid)
+        window.location.assign('/views?action='+data.getValue()+'&cid='+data.getData().contractid)
+        console.log('/views?module='+data.getValue()+'&cid='+data.getData().contractid)
         },        
     rowClick:function(e, row){
             row.select();
@@ -381,7 +393,6 @@ document.getElementById("AddBtn").onclick = function() {
 //Flask passess and UPSERT to the database, the table is also updated on the screen
 document.getElementById("SubBtn").onclick = function() {
     dd={}
-    dd.module=module
     for(item in cols){
         dd[cols[item]]=document.getElementById(cols[item]).value
         }
@@ -395,6 +406,7 @@ document.getElementById("SubBtn").onclick = function() {
 //        table.updateData(dd);  This needs to be fixed, should work as 'index' set in table variable
     }
     dd.upduserid = userid;
+    dd.module=module
     $.ajax({
         type: "POST", dataType: "json", contentType: "application/json",
         url: "/upsertdata",
@@ -413,6 +425,7 @@ document.getElementById("DelBtn").onclick = function() {
             dd.module=module
             dd.id=document.getElementById("{{id}}").value
             dd.userid=userid
+            dd.contractid = table.getSelectedData()[0].contractid;
             $.ajax({
                 type: "POST", dataType: "json", contentType: "application/json",
                 url: "/deletedata",

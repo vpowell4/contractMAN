@@ -37,10 +37,9 @@ def table_data(sql,type):
 def getbasedata():
     if request.method == 'POST':
         content = request.get_json()
+#        print(json.dumps(content))
 # Which contracts is this person allowed to see ?
-        if (content['module']=="actor") :
-            execstring="SELECT * FROM "+content["module"].title()+"s"
-        elif (content['module']=="supplier") :
+        if (content['module'] in ["actor","supplier"]) :
             execstring="SELECT * FROM "+content["module"].title()+"s"
         else :
             contracts="(SELECT contractid FROM accesss where actorid = (SELECT actorid FROM Actors WHERE email='"+session['current_user']+"'))"
@@ -52,7 +51,8 @@ def getbasedata():
             elif (content["sid"]!="" ):
                 execstring=execstring+" AND supplierid='"+str(content["sid"])+"'"
         data=table_data("SELECT CAST(("+execstring+" FOR JSON PATH) AS VARCHAR(MAX))","one")
-        if (data==None): data[0]=""
+        for row in data :
+            if (row==None) : data[0]="ERROR"
         return data[0]
 
 login_manager = LoginManager()
@@ -160,13 +160,15 @@ def about():
 @login_required
 def issues():
     contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
+    actors=table_data("SELECT actorid, email FROM Actors FOR JSON PATH","one")
     status=request.args.get('status', '')
     module=request.args.get('action', '')
+    cid=request.args.get('cid', '')
     columns=table_meta(table=module+"s",type="columns")
     if (module=="actor") : mid="email"
     else : mid=module+"id"
-    return render_template("views.html",columns=columns,id=mid,cid="",status=status,module=module,
-        contracts=json.loads(contracts[0]),userid=session['current_user'])
+    return render_template("views.html",columns=columns,id=mid,cid=cid,status=status,module=module,
+        actors=json.loads(actors[0]),contracts=json.loads(contracts[0]),userid=session['current_user'])
 
 @app.route("/contractid")
 def contractview(): 
@@ -187,16 +189,23 @@ def contractview():
 @login_required
 def deletedata():    
     data = request.get_json()
-    result = table_data("EXECUTE "+data['module']+"S_DELETE @"+data['module']+"ID='"+data['id']+"'","exe")
+    contractid=""
+    if (data['module'] in ['issue','change','risk','access','contract']) :
+        contractid=str(data['contractid'])        
+    result = table_data("EXECUTE "+data['module']+"S_DELETE @ID='"+data['id']+
+                        "',@USERID='"+data['userid']+"',@contractid='"+contractid+"'","exe")
     return data
 
 @app.route('/upsertdata', methods=['POST'])
 @login_required
 def upsertdata():
     data = request.get_json()
-    if (request.args.get('action', '')=="dialog") : cmodule="dialog";
-    else : cmodule=data['module']
-    result = table_data("EXECUTE "+cmodule+"S_UPSERT @JSONINFO='"+json.dumps(data)+"'","exe")
+    print(data)
+    cmodule=data['module']
+    if (request.args.get('action', '')=="dialog") : cmodule="dialog"
+    result = table_data("EXECUTE "+cmodule+"S_UPSERT @JSONINFO='"+json.dumps(data)+
+                            "',@USERID='"+data['upduserid']+
+                            "',@CONTRACTID='"+str(data['contractid'])+"'","exe")
     return data
 
 if __name__ == "__main__":
