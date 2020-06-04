@@ -158,7 +158,7 @@ def about():
 
 @app.route("/views")
 @login_required
-def issues():
+def views():
     contracts=table_data("SELECT contractid, title FROM Contracts FOR JSON PATH","one")
     actors=table_data("SELECT actorid, email FROM Actors FOR JSON PATH","one")
     status=request.args.get('status', '')
@@ -170,21 +170,6 @@ def issues():
     return render_template("views.html",columns=columns,id=mid,cid=cid,status=status,module=module,
         actors=json.loads(actors[0]),contracts=json.loads(contracts[0]),userid=session['current_user'])
 
-@app.route("/contractid")
-def contractview(): 
-    cid=request.args.get('id','')
-    module=request.args.get('module','contract')
-    columns=table_meta(table=module+"s",type="columns")
-    if (module=="access") :
-        actors=table_data("SELECT actorid, email FROM Actors FOR JSON PATH","one")
-        return render_template("accesss.html",columns=columns,actors=json.loads(actors[0]),
-                cid=cid,userid=session['current_user'])
-    contract=table_data("SELECT * FROM Contracts WHERE contractid='"+cid+"'FOR JSON PATH","one")
-    if (contract==None) : contract=""
-    else : contract=contract[0]
-    return render_template(module+"s.html", columns=columns, status="", cid=cid, sid="",
-                contract=contract,id=module+"id", userid=session['current_user'])
-
 @app.route('/deletedata', methods=['POST'])
 @login_required
 def deletedata():    
@@ -193,16 +178,17 @@ def deletedata():
     if (data['module'] in ['issue','change','risk','access','contract']) :
         contractid=str(data['contractid'])        
     result = table_data("EXECUTE "+data['module']+"S_DELETE @ID='"+data['id']+
-                        "',@USERID='"+data['userid']+"',@contractid='"+contractid+"'","exe")
+                        "',@USERID='"+data['userid']+
+                            "',@CONTRACTID='"+contractid+"'","exe")
     return data
 
 @app.route('/upsertdata', methods=['POST'])
 @login_required
 def upsertdata():
     data = request.get_json()
-    print(data)
     cmodule=data['module']
-    if (request.args.get('action', '')=="dialog") : cmodule="dialog"
+    if (request.args.get('action', '')=="dialog") :
+        cmodule="dialog"
     result = table_data("EXECUTE "+cmodule+"S_UPSERT @JSONINFO='"+json.dumps(data)+
                             "',@USERID='"+data['upduserid']+
                             "',@CONTRACTID='"+str(data['contractid'])+"'","exe")

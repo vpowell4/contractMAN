@@ -13,8 +13,8 @@ var DialogDataTable = new Tabulator("#DialogDataTable",{
     data:DialogData, addRowPos:"top",layout:"fitColumns",
     placeholder:"No dialogue data recorded",
     columns:[{title:"Type",field:"module",width:100, cellClick:function(e, cell){
-                window.location.assign("/contractid?module="+cell.getRow().getData().module+
-                    "&id="+cell.getRow().getData().contractid)}},
+                window.location.assign("/views?action="+cell.getRow().getData().module+
+                    "&cid="+cell.getRow().getData().contractid)}},
         {title:"Comments",field:"comments",width:600},
         {title:"upduserid",field:"upduserid",width:150},
         {title:"createdt",field:"createdt",width:150,formatter:"datetime",
@@ -27,7 +27,7 @@ var DialogDataTable = new Tabulator("#DialogDataTable",{
             else {return "<span style='color:green;'>" + value + "</span>";}}}
         ],
         rowDblClick:function(e, row){
-            var selectedData = table.getSelectedData()[0];
+            console.log(row.getData())
             dialogmodal.style.display = "block";
             }
         });

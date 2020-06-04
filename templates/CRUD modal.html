@@ -60,22 +60,20 @@
 <!-- The Modal -->
 {% if module=="actor" %}
     {%set noview= ["actorid","createdt","updatedt","upduserid"] %}
-{% elif module=="contract" %}
+{% endif %}{% if module=="contract" %}
     {%set noview= ["contractid","contractdoc","createdt","updatedt","upduserid"] %}
-{% elif module=="clause" %}
+{% endif %}{% if module=="clause" %}
     {%set noview= ["contractid","clauseid","createdt","updatedt","upduserid"] %}
-{% elif module=="issue" %}
+{% endif %}{% if module=="issue" %}
     {%set noview= ["contractid","clauseid","issueid","createdt","updatedt","upduserid"] %}
-{% elif module=="risk" %}
+{% endif %}{% if module=="risk" %}
     {%set noview= ["contractid","clauseid","riskid","createdt","updatedt","upduserid"] %}
-{% elif module=="change" %}
+{% endif %}{% if module=="change" %}
     {%set noview= ["contractid","clauseid","changeid","createdt","updatedt","upduserid"] %}
-{% elif module=="supplier" %}
+{% endif %}{% if module=="supplier" %}
     {%set noview= ["supplierid","createdt","updatedt","upduserid"] %}
-{% elif module=="access" %}
-    {%set noview= ["accessid","contractid","createdt","updatedt","upduserid"] %}
-{% else %}
-    {%set noview= ["createdt","updatedt","upduserid"] %}
+{% endif %}{% if module=="access" %}
+    {%set noview= ["email","accessid","contractid","createdt","updatedt","upduserid"] %}
 {% endif %}
 <div id="AddModal" class="modal"style="overflow-y:auto;">
 	<div class="modal-dialog" >
@@ -100,34 +98,29 @@
                                 <option>Risks</option>
                                 <option>Changes</option>
                             </select>
-                            {% endif %}
-                            {% if item=="status" %}
+                            {% elif item=="status" %}
                             <select class="form-control" type="text" id="{{item}}">
                                 <option>Normal</option>
                                 <option>Warning</option>
                                 <option>Attention</option>
                             </select>
-                            {% endif %}
-                            {% if item in ["active"] %}
+                            {% elif item in ["active"] %}
                             <select class="form-control" type="text" id="{{item}}">
                                 <option>Yes</option>
                                 <option>No</option>
                             </select>
-                            {% endif %}
-                            {% if item in ["read","add","upd","del"] %}
+                            {% elif item in ["read","add","upd","del"] %}
                             <select class="form-control" type="text" id="{{item}}">
                                 <option>True</option>
                                 <option>False</option>
                             </select>
-                            {% endif %}
-                            {% if item in ["priority","impact"] %}
+                            {% elif item in ["priority","impact"] %}
                             <select class="form-control" type="text" id="{{item}}">
                                 <option>High</option>
                                 <option>Medium</option>
                                 <option>Low</option>
                             </select>
-                            {% endif %}
-                            {% if item=="adminlevel" %}
+                            {% elif item=="adminlevel" %}
                             <select class="form-control" type="text" id="{{item}}">
                                 <option>Administrator</option>
                                 <option>Owner</option>
@@ -135,34 +128,32 @@
                                 <option>Reviewer</option>
                                 <option>Sys Admin</option>
                             </select>
-                            {% endif %}
-                            {% if item=="contractid" and cid!="" %}
+                            {% elif item=="contractid" and cid!="" %}
                             <input class="form-control" type="text" id="{{item}}">
-                            {% endif %}
-                            {% if item=="contractid" and cid=="" %}
+                            {% elif item=="contractid" and cid=="" %}
                             <select class="form-control" type="text" id="{{item}}">
                             {% for contsel in contracts%}
                             <option value="{{contsel['contractid']}}">{{contsel['title']}}</option>
                             {% endfor %}
                             </select>
-                            {% endif %}
-                            {% if item=="actorid" %}
+                            {% elif item=="actorid" %}
                             <select class="form-control" type="text" id="{{item}}">
                             {% for actorsel in actors%}
                             <option value="{{actorsel['actorid']}}">{{actorsel['email']}}</option>
                             {% endfor %}
                             </select>
-                            {% endif %}
-                            {% if item in ["startdate","enddate","duedate","milestonedate"] %}
+                            {% elif item in ["startdate","enddate","duedate","milestonedate"] %}
                             <input class="form-control" type="date" id="{{item}}">
                             {% else %}
                             <input class="form-control" type="text" id="{{item}}">
-                            {% endif %}
-                        </div>{% endfor %}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
                         {% for item in noview %}
                         <div style="display: none;">
                             <input type="text" id="{{item}}">
-                        </div>{% endfor %}
+                        </div>
+                        {% endfor %}
                     </form>
                 </div>
 			</div>
@@ -187,12 +178,20 @@
 			</div>
 			<div class="modal-body">
                 <div class="container">
-					The Body
+                    <div class="row">
+                        The Body
+                    </div>
+                    <div class="row">
+                        <div class="input-group" style="padding:10px">
+                            <span class="input-group-text font-weight-bold">Enter reply here</span>
+                            <textarea id="ReplyText" class="form-control" aria-label="With textarea"></textarea>
+                        </div>
+                    </div>
                 </div>
 			</div>
 			<div class="modal-footer">
                 <div class="row">
-                    <div class="col"><button type="button" class="btn btn-success" id="dSubBtn" >Submit</button></div>
+                    <div class="col"><button type="button" class="btn btn-success" id="dRpyBtn" >Reply</button></div>
                     <div class="col"><button type="button" class="btn btn-secondary" id="dCanBtn" data-dismiss="modal">Cancel</button></div>
                 </div>
 			</div>
@@ -275,9 +274,11 @@ for (item in cols) {
 }
 
 // Add Access, Issue, Risk and Change pulldown to contract or supplier module tables
+var printIcon = function(cell, formatterParams, onRendered){ //plain text value
+    return '<button type="button" class="btn btn-info btn-sm">Action</button>';};
 if(module == 'contract'){
-    colsview.unshift({title:"Actions",field:"actions",editor:"select",
-        cellEdited:function(data){console.log(data.getValue())},
+    colsview.unshift({formatter:printIcon,
+        editor:"select", cellEdited:function(data){console.log(data.getValue())},
         editorParams:{values:{"issue":"issue","risk":"risk","change":"change","access":"access"}},   
         })
     }
